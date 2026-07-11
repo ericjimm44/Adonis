@@ -622,6 +622,64 @@ em { font-style: italic; color: var(--gold); }
   .exercise__actions { grid-column: 1; grid-row: auto; justify-self: start; }
 }
 
+/* ============ progress charts ============ */
+
+.progress { max-width: 44rem; margin-top: 3rem; }
+
+.progress__head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem; flex-wrap: wrap;
+}
+.progress__head .eyebrow { margin-bottom: 0; }
+
+.progress__select {
+  font-family: var(--serif);
+  font-size: 1rem;
+  color: var(--sand);
+  background: var(--ink);
+  border: 1px solid var(--hairline);
+  border-radius: 0.3rem;
+  padding: 0.45rem 0.8rem;
+  max-width: 16rem;
+}
+.progress__select:focus { outline: none; border-color: var(--gold); }
+
+.progress__pr {
+  font-family: var(--serif);
+  font-style: italic;
+  color: var(--gold);
+  margin: 0.9rem 0 0.4rem;
+  font-size: 0.95rem;
+}
+
+.chart {
+  width: 100%;
+  overflow-x: auto;
+}
+.chart svg { display: block; width: 100%; height: auto; }
+
+.chart__grid { stroke: var(--hairline); stroke-width: 1; }
+.chart__gridlabel { fill: var(--sand-dim); font-family: var(--sans); font-size: 11px; letter-spacing: 0.04em; }
+.chart__line { fill: none; stroke: var(--gold); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+.chart__end { fill: var(--ember); }
+.chart__endlabel { fill: var(--sand); font-family: var(--sans); font-size: 12px; font-weight: 500; }
+.chart__bar { fill: var(--ember); }
+.chart__bar--dim { fill: rgba(201, 111, 74, 0.35); }
+.chart__barlabel { fill: var(--sand-dim); font-family: var(--sans); font-size: 10px; letter-spacing: 0.02em; }
+.chart__barval { fill: var(--sand); font-family: var(--sans); font-size: 11px; font-weight: 500; }
+
+/* ============ data backup ============ */
+
+.backup { max-width: 44rem; }
+.backup__note { color: var(--sand-dim); font-size: 0.85rem; max-width: 34rem; margin-bottom: 1.1rem; }
+.backup__row { display: flex; gap: 0.7rem; flex-wrap: wrap; }
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
 /* ============ goals ============ */
 
 .goals { max-width: 44rem; margin-top: 3rem; }

@@ -540,6 +540,7 @@
     releaseWake();
     renderPlan();
     renderJournal();
+    renderProgress();
     updateFocusHint();
     $("#journal").scrollIntoView({ behavior: "smooth" });
   });
@@ -624,6 +625,199 @@
     goals.splice(+btn.dataset.goaldel, 1);
     store.set(KEY_GOALS, goals);
     renderGoals();
+  });
+
+  /* ================= progress charts ================= */
+
+  let progSel = null;
+
+  // Epley estimated 1-rep-max — the standard way to compare sets at
+  // different weights/reps on one strength curve.
+  const est1RM = (w, r) => (+w) * (1 + (+r) / 30);
+
+  // Per-exercise series: one best data point per logged session.
+  function seriesFor(name) {
+    const entries = (getHist()[name] || []).filter((e) => e.sets && e.sets.length);
+    const weighted = entries.some((e) => e.sets.some((s) => +s.w > 0));
+    return {
+      weighted,
+      points: entries.map((e) => {
+        const best = e.sets.reduce((m, s) => {
+          const v = weighted ? est1RM(s.w || 0, s.r || 0) : (+s.r || 0);
+          return v > m ? v : m;
+        }, 0);
+        return { t: new Date(e.date), v: Math.round(best * 10) / 10 };
+      }).filter((p) => p.v > 0),
+    };
+  }
+
+  function exercisesWithData() {
+    const hist = getHist();
+    return Object.keys(hist)
+      .map((name) => ({ name, n: seriesFor(name).points.length }))
+      .filter((x) => x.n > 0)
+      .sort((a, b) => b.n - a.n);
+  }
+
+  const shortDate = (d) => d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+
+  function lineChartSVG(points, weighted) {
+    const W = 640, H = 200, pL = 46, pR = 56, pT = 16, pB = 30;
+    if (!points.length) return "";
+    const vs = points.map((p) => p.v);
+    let lo = Math.min(...vs), hi = Math.max(...vs);
+    if (lo === hi) { lo = Math.max(0, lo - 1); hi = hi + 1; }
+    const pad = (hi - lo) * 0.15; lo = Math.max(0, lo - pad); hi = hi + pad;
+    const x = (i) => points.length === 1 ? W - pR : pL + (i / (points.length - 1)) * (W - pL - pR);
+    const y = (v) => pT + (1 - (v - lo) / (hi - lo)) * (H - pT - pB);
+
+    // faint grid + axis labels
+    let grid = "";
+    for (let g = 0; g <= 2; g++) {
+      const v = lo + (g / 2) * (hi - lo);
+      const yy = y(v);
+      grid += `<line class="chart__grid" x1="${pL}" y1="${yy.toFixed(1)}" x2="${W - pR}" y2="${yy.toFixed(1)}" />`;
+      grid += `<text class="chart__gridlabel" x="${pL - 8}" y="${(yy + 4).toFixed(1)}" text-anchor="end">${Math.round(v)}</text>`;
+    }
+
+    const line = points.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(p.v).toFixed(1)}`).join(" ");
+    const area = `${line} L${x(points.length - 1).toFixed(1)},${H - pB} L${x(0).toFixed(1)},${H - pB} Z`;
+
+    const last = points[points.length - 1];
+    const lx = x(points.length - 1), ly = y(last.v);
+    const label = weighted ? `${Math.round(last.v)}` : `${Math.round(last.v)} reps`;
+
+    const xlabels = points.length === 1
+      ? `<text class="chart__gridlabel" x="${lx.toFixed(1)}" y="${H - 8}" text-anchor="end">${shortDate(last.t)}</text>`
+      : `<text class="chart__gridlabel" x="${pL}" y="${H - 8}">${shortDate(points[0].t)}</text>
+         <text class="chart__gridlabel" x="${W - pR}" y="${H - 8}" text-anchor="end">${shortDate(last.t)}</text>`;
+
+    return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Strength over time">
+      <defs><linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#c96f4a" stop-opacity="0.28"/>
+        <stop offset="100%" stop-color="#c96f4a" stop-opacity="0"/>
+      </linearGradient></defs>
+      ${grid}
+      <path d="${area}" fill="url(#areaFill)" />
+      <path class="chart__line" d="${line}" />
+      <circle class="chart__end" cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" r="4.5" />
+      <text class="chart__endlabel" x="${(lx - 8).toFixed(1)}" y="${(ly - 10).toFixed(1)}" text-anchor="end">${label}</text>
+      ${xlabels}
+    </svg>`;
+  }
+
+  function barChartSVG(bars) {
+    const W = 640, H = 180, pL = 30, pR = 12, pT = 20, pB = 30;
+    if (!bars.length) return "";
+    const hi = Math.max(...bars.map((b) => b.v), 1);
+    const slot = (W - pL - pR) / bars.length;
+    const bw = Math.min(slot * 0.6, 42);
+    const y = (v) => pT + (1 - v / hi) * (H - pT - pB);
+    const body = bars.map((b, i) => {
+      const cx = pL + slot * i + slot / 2;
+      const yy = y(b.v), h = (H - pB) - yy;
+      const cls = i === bars.length - 1 ? "chart__bar" : "chart__bar chart__bar--dim";
+      return `<rect class="${cls}" x="${(cx - bw / 2).toFixed(1)}" y="${yy.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(0, h).toFixed(1)}" rx="2" />
+        ${b.v ? `<text class="chart__barval" x="${cx.toFixed(1)}" y="${(yy - 6).toFixed(1)}" text-anchor="middle">${b.v}</text>` : ""}
+        <text class="chart__barlabel" x="${cx.toFixed(1)}" y="${H - 10}" text-anchor="middle">${b.label}</text>`;
+    }).join("");
+    return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Weekly sets completed">${body}</svg>`;
+  }
+
+  function weeklyVolume() {
+    const log = store.get(KEY_LOG, []);
+    const byWeek = new Map();
+    log.forEach((l) => {
+      const id = weekId(l.date);
+      byWeek.set(id, (byWeek.get(id) || 0) + (l.done || 0));
+    });
+    // last 8 calendar weeks up to now, so gaps read as honest zeroes
+    const bars = [];
+    const cursor = new Date();
+    for (let i = 7; i >= 0; i--) {
+      const d = new Date(cursor); d.setDate(d.getDate() - i * 7);
+      const id = weekId(d);
+      bars.push({ label: d.toLocaleDateString(undefined, { month: "numeric", day: "numeric" }), v: byWeek.get(id) || 0 });
+    }
+    return bars;
+  }
+
+  function renderProgress() {
+    const options = exercisesWithData();
+    const panel = $("#progressPanel");
+    const empty = $("#progressEmpty");
+    if (!options.length) {
+      panel.hidden = true;
+      empty.hidden = false;
+      return;
+    }
+    panel.hidden = false;
+    empty.hidden = true;
+
+    if (!progSel || !options.some((o) => o.name === progSel)) progSel = options[0].name;
+    $("#progExercise").innerHTML = options.map((o) =>
+      `<option value="${esc(o.name)}"${o.name === progSel ? " selected" : ""}>${esc(o.name)} · ${o.n} log${o.n === 1 ? "" : "s"}</option>`).join("");
+
+    const s = seriesFor(progSel);
+    const best = s.points.reduce((m, p) => (p.v > m.v ? p : m), s.points[0]);
+    $("#progPR").textContent = s.weighted
+      ? `Personal best · ≈ ${Math.round(best.v)} estimated 1-rep max (${shortDate(best.t)})`
+      : `Personal best · ${Math.round(best.v)} reps in a set (${shortDate(best.t)})`;
+    $("#strengthChart").innerHTML = lineChartSVG(s.points, s.weighted);
+    $("#volumeChart").innerHTML = barChartSVG(weeklyVolume());
+  }
+
+  $("#progExercise").addEventListener("change", (e) => {
+    progSel = e.target.value;
+    renderProgress();
+  });
+
+  /* ================= data backup (export / import) ================= */
+
+  const DATA_KEYS = [KEY_EQUIP, KEY_LOG, KEY_PLAN, KEY_HIST, KEY_GOALS, KEY_ACTIVE];
+
+  $("#exportBtn").addEventListener("click", () => {
+    const dump = { app: "ADONIS", version: 1, exportedAt: new Date().toISOString(), data: {} };
+    DATA_KEYS.forEach((k) => { dump.data[k] = store.get(k, null); });
+    const blob = new Blob([JSON.stringify(dump, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `adonis-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  $("#importBtn").addEventListener("click", () => $("#importFile").click());
+
+  $("#importFile").addEventListener("change", (ev) => {
+    const file = ev.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      let dump;
+      try { dump = JSON.parse(reader.result); }
+      catch { alert("That file isn't a valid ADONIS backup — it couldn't be read as JSON."); return; }
+      if (!dump || dump.app !== "ADONIS" || !dump.data) {
+        alert("That doesn't look like an ADONIS backup file.");
+        return;
+      }
+      if (!confirm("Import this backup? It replaces the data currently on this device.")) return;
+      DATA_KEYS.forEach((k) => {
+        if (k in dump.data && dump.data[k] !== null) store.set(k, dump.data[k]);
+        else store.del(k);
+      });
+      // reload in-memory state from the imported data
+      selectedEquip = new Set(store.get(KEY_EQUIP, []));
+      currentSession = store.get(KEY_ACTIVE, null);
+      progSel = null;
+      renderPlan(); renderFocus(); renderEquip();
+      renderGoals(); renderJournal(); renderProgress();
+      if (currentSession) renderSession(); else $("#session").hidden = true;
+      alert("Backup imported. Your plan, logs, and goals are restored.");
+    };
+    reader.readAsText(file);
+    ev.target.value = ""; // allow re-importing the same file later
   });
 
   /* ================= journal ================= */
@@ -727,5 +921,6 @@
   renderFocus();
   renderGoals();
   renderJournal();
+  renderProgress();
   if (currentSession) renderSession(); // restore an in-progress session after refresh
 })();

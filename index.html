@@ -199,6 +199,22 @@
         <div class="stat"><span class="stat__num" id="statStreak">0</span><span class="stat__label">Week streak</span></div>
       </div>
 
+      <div class="progress reveal" id="progressPanel" hidden>
+        <div class="progress__head">
+          <p class="eyebrow">Strength curve</p>
+          <div class="progress__controls">
+            <label class="sr-only" for="progExercise">Choose a lift</label>
+            <select id="progExercise" class="progress__select" aria-label="Choose a lift"></select>
+          </div>
+        </div>
+        <p class="progress__pr" id="progPR"></p>
+        <div class="chart" id="strengthChart"></div>
+
+        <p class="eyebrow" style="margin-top:2.6rem">Weekly work · sets completed</p>
+        <div class="chart" id="volumeChart"></div>
+      </div>
+      <p class="log__empty reveal" id="progressEmpty">Log a few sets during a session and your strength curve appears here.</p>
+
       <div class="goals reveal">
         <p class="eyebrow">Goals</p>
         <ul class="goals__list" id="goalsList"></ul>
@@ -216,6 +232,20 @@
       <p class="eyebrow" style="margin-top:3.5rem">Session log</p>
       <ul class="log" id="logList"></ul>
       <p class="log__empty" id="logEmpty">No sessions yet. The statue is still in the stone.</p>
+
+      <div class="backup reveal">
+        <p class="eyebrow" style="margin-top:3.5rem">Your data</p>
+        <p class="backup__note">
+          Everything you log lives only on this device. Export a backup before you
+          clear your browser or move to a new phone — then import it to pick up
+          exactly where you left off.
+        </p>
+        <div class="backup__row">
+          <button class="btn btn--ghost btn--sm" id="exportBtn" type="button">Export backup</button>
+          <button class="btn btn--ghost btn--sm" id="importBtn" type="button">Import backup</button>
+          <input type="file" id="importFile" accept="application/json,.json" hidden />
+        </div>
+      </div>
     </section>
 
     <footer class="footer">
