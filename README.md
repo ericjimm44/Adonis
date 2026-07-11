@@ -5,16 +5,23 @@ broad shoulders, carved chest, V-taper back, and a fighter's conditioning.
 
 ## How it works
 
-1. **Pick your arsenal.** Each session, select whatever equipment you actually have
-   in front of you — a full gym, a pair of dumbbells, a band, or nothing at all.
-2. **Forge the session.** The app writes a workout from the 4-day Killmonger
-   rotation, choosing the best exercise variation your equipment allows. Every
-   slot has a bodyweight fallback, so a hotel room is never an excuse.
-3. **Do the work.** Tap the dots to log sets, use the built-in rest timer
-   (30–60s rests are the point), and complete the session.
-4. **Proof of work.** Sessions are logged locally (localStorage) — totals,
-   weekly count, and week streak. The rotation auto-advances from your last
-   logged day.
+1. **Begin the campaign.** Tell it how many days a week (2–6) and how long per
+   session (30–75 min). It writes a 12-week periodized plan: three build waves
+   (Foundation → Build → Peak) with a deload every fourth week — the mesocycle
+   structure hypertrophy research supports. Rep targets, RPE, and set counts
+   shift by phase; deload weeks halve the sets automatically.
+2. **Pick your arsenal.** Each session, select whatever equipment you actually
+   have in front of you — a full gym, a pair of dumbbells, a band, or nothing
+   at all. Every slot has a bodyweight fallback.
+3. **Do the work.** Log weight × reps on every set (weight optional for
+   bodyweight moves). The app remembers your last numbers, prefills them, and
+   tells you when to add weight vs. chase reps (double progression). Swap any
+   exercise for an equivalent with one tap, and every movement has a form
+   cue plus a ▶ link to video tutorials. An in-progress session survives a
+   page refresh.
+4. **Set goals, keep proof.** Track measurable goals (bodyweight, waist, key
+   lifts) with progress bars, plus a full session log — totals, weekly count,
+   and week streak. All data stays on your device (localStorage).
 
 ## The rotation
 

@@ -30,6 +30,7 @@ const PROGRAM = {
     title: "Warrior Chest & Back",
     sub: "The armor plate and the V-taper — pressing power up front, width behind. Supersets, 30–60s rest between rounds.",
     desc: "Pressing volume + lat width. The front-and-back of the silhouette.",
+    science: "Antagonist (push/pull) supersets let you do more quality sets in less time with no strength loss between pairs. Aim to leave 1–3 reps in the tank on every set — training close to, not at, failure drives the same growth with less fatigue.",
     blocks: [
       {
         label: "A — Heavy pair",
@@ -98,6 +99,7 @@ const PROGRAM = {
     title: "The Adonis Frame",
     sub: "Shoulders build the ratio; arms fill the sleeve. High-volume pairs — this is the day that makes the silhouette.",
     desc: "Delts three ways + biceps/triceps giant work. The width day.",
+    science: "The side delt is what visually widens the frame, and it responds to volume more than load — 12–20 controlled reps with a full range beats heaving heavy. Arms grow best with a deep stretch (skull crushers, incline curls) and strict elbows.",
     blocks: [
       {
         label: "A — Press pair",
@@ -171,6 +173,7 @@ const PROGRAM = {
     title: "The Foundation",
     sub: "Killmonger moves like a fighter — the base is strong, springy and lean. Heavier pairs, honest depth.",
     desc: "Squat, hinge, lunge, calves. The engine under the frame.",
+    science: "Heavy compound lower-body work raises whole-body training capacity and keeps the physique athletic, not just decorative. Full range of motion — especially the stretched position — produces more growth per set than partial reps with bigger loads.",
     blocks: [
       {
         label: "A — Squat pattern",
@@ -235,6 +238,7 @@ const PROGRAM = {
     title: "Killmonger Engine",
     sub: "The conditioning that keeps the physique visible. Boxing rounds, intervals, and a core circuit — stay lean, stay dangerous.",
     desc: "Boxing / intervals + core circuit. The shred day.",
+    science: "Definition is mostly a body-fat story: intervals and boxing burn calories while sparing muscle better than long steady cardio. Abs are muscles too — train them with load and control, then let nutrition (a modest calorie deficit, 0.7–1g protein per lb) reveal them.",
     blocks: [
       {
         label: "A — Rounds",
@@ -287,6 +291,135 @@ const PROGRAM = {
       },
     ],
   },
+  fullbody: {
+    title: "Total Sculpt",
+    sub: "Everything in one sitting — squat, press, pull, delts, hinge, core. The highest-value session when you only train a few days a week.",
+    desc: "Full-body hypertrophy — the smart play for 2–3 day weeks.",
+    science: "When you train 2–3 days a week, hitting every muscle each session wins: research shows training a muscle at least twice weekly grows it better than once. Compounds first while you're fresh; isolation and core after.",
+    blocks: [
+      {
+        label: "A — Squat + press pair",
+        scheme: "4 rounds · 8–12 reps · rest 60s after the pair",
+        slots: [
+          [
+            ex("Barbell back squat", ["barbell", "rack"], "Sit between the hips, drive the floor apart."),
+            ex("Goblet squat", ["dumbbells"], "Bell at the chest, elbows inside the knees."),
+            ex("Kettlebell front squat", ["kettlebell"], "Racked tall, full depth."),
+            ex("Leg press", ["machines"], "Full range beats big plates."),
+            ex("Band front squat", ["bands"], "Band under feet, racked at shoulders."),
+            ex("Tempo squat", [], "3s down, pause, drive up. Add a jump if too easy."),
+          ],
+          [
+            ex("Barbell bench press", ["barbell", "bench"], "Slight arch, bar to lower chest."),
+            ex("Dumbbell bench press", ["dumbbells", "bench"], "Deep stretch, squeeze at the top."),
+            ex("Standing dumbbell press", ["dumbbells"], "Brace like a plank at the top."),
+            ex("Machine chest press", ["machines"], "Control the negative for 2 counts."),
+            ex("Kettlebell floor press", ["kettlebell"], "Elbow touches, press and pause."),
+            ex("Band push-up", ["bands"], "Band across the back for extra load."),
+            ex("Feet-elevated push-up", [], "Hips locked, chest kisses the floor."),
+          ],
+        ],
+      },
+      {
+        label: "B — Pull + delts pair",
+        scheme: "3 rounds · 10–15 reps · rest 45s",
+        slots: [
+          [
+            ex("Pull-up", ["pullup"], "Full hang to chin over the bar."),
+            ex("Lat pulldown", ["machines"], "Drive elbows to your back pockets."),
+            ex("Barbell row", ["barbell"], "Hinge to 45°, pull to the hips."),
+            ex("Single-arm dumbbell row", ["dumbbells"], "Long stretch, pull with the lat."),
+            ex("Seated cable row", ["cables"], "Chest tall, pause at the ribs."),
+            ex("Band row", ["bands"], "Slow 3-count negatives."),
+            ex("Doorframe / table row", [], "Body straight as a plank."),
+          ],
+          [
+            ex("Dumbbell lateral raise", ["dumbbells"], "Lead with the elbows. The ratio-builder."),
+            ex("Cable lateral raise", ["cables"], "Tension from rep one."),
+            ex("Band lateral raise", ["bands"], "Slow up, slower down."),
+            ex("Kettlebell lateral raise (light)", ["kettlebell"], "Strict, one side at a time."),
+            ex("Side-plank arc raise", [], "Top arm sweeps floor to sky."),
+          ],
+        ],
+      },
+      {
+        label: "C — Hinge + core pair",
+        scheme: "3 rounds · 10–15 reps · rest 45s",
+        slots: [
+          [
+            ex("Romanian deadlift", ["barbell"], "Push hips back, bar shaves the thighs."),
+            ex("Dumbbell RDL", ["dumbbells"], "Hamstrings load like bowstrings."),
+            ex("Kettlebell swing", ["kettlebell"], "Snap the hips — a jump projected forward."),
+            ex("Band good morning", ["bands"], "Band over neck, under feet."),
+            ex("Single-leg hip thrust", [], "Drive one heel, squeeze 2s at the top."),
+          ],
+          [
+            ex("Hanging knee / leg raise", ["pullup"], "No swing. Curl the pelvis at the top."),
+            ex("Cable crunch", ["cables"], "Crunch ribs to hips, not arms."),
+            ex("Weighted crunch", ["dumbbells"], "Load on chest, slow squeeze."),
+            ex("Band pallof press", ["bands"], "Anti-rotation — press and hold 3s."),
+            ex("Plank body-saw", [], "Rock on forearms. Brutal and quiet."),
+          ],
+        ],
+      },
+    ],
+  },
 };
 
 const DAY_ORDER = ["chestback", "shoulderarms", "legs", "engine"];
+
+/* ============================================================
+   12-week plan templates
+   ============================================================ */
+
+/* weekly session layout by training days per week */
+const SPLITS = {
+  2: ["fullbody", "fullbody"],
+  3: ["fullbody", "fullbody", "engine"],
+  4: ["chestback", "shoulderarms", "legs", "engine"],
+  5: ["chestback", "shoulderarms", "legs", "engine", "shoulderarms"],
+  6: ["chestback", "shoulderarms", "legs", "chestback", "shoulderarms", "engine"],
+};
+
+const SPLIT_NOTES = {
+  2: "Two full-body days — with only two sessions, hitting every muscle twice a week is what the research supports.",
+  3: "Two full-body days plus the Engine — muscle twice a week, conditioning once, lean and wide.",
+  4: "The classic Killmonger rotation — every muscle group gets its own stage.",
+  5: "The rotation plus a second Adonis Frame day — extra side-delt and arm volume where the silhouette lives.",
+  6: "A double rotation — chest/back and shoulders twice weekly, one Engine day to stay lean. Recovery is the job now.",
+};
+
+/* mesocycle periodization: 3 build waves, deload every 4th week */
+const PHASES = [
+  {
+    from: 1, to: 3, name: "Foundation", reps: "12–15", rpe: "RPE 7 · leave 3 reps in the tank",
+    setMult: 1, note: "Groove technique and build work capacity. Moderate loads, full range, strict tempo — log every set so the next phases have a baseline.",
+  },
+  {
+    from: 4, to: 4, name: "Deload", reps: "10–12 easy", rpe: "RPE 5–6 · everything feels crisp",
+    setMult: 0.5, note: "Half the sets, same movements, loads at ~60%. Growth happens in recovery — this week is where the last three weeks get cashed in.",
+  },
+  {
+    from: 5, to: 7, name: "Build", reps: "10–12", rpe: "RPE 8 · 2 reps in reserve",
+    setMult: 1, note: "Loads climb. Beat the logbook: same weight for more reps, or more weight for the same reps — that's progressive overload, the one non-negotiable.",
+  },
+  {
+    from: 8, to: 8, name: "Deload", reps: "10–12 easy", rpe: "RPE 5–6 · move like it's a rehearsal",
+    setMult: 0.5, note: "Half sets again. Use the spare time on mobility and extra sleep — the peak phase will ask for everything.",
+  },
+  {
+    from: 9, to: 11, name: "Peak", reps: "8–12", rpe: "RPE 9 · 1 rep in reserve",
+    setMult: 1, setAdd: 1, note: "Highest volume of the cycle — one extra round on the first pair. Push sets close to failure with form intact. This is where the physique is carved.",
+  },
+  {
+    from: 12, to: 12, name: "Deload & assess", reps: "10–12 easy", rpe: "RPE 6 · victory lap",
+    setMult: 0.5, note: "Half sets, then measure: photos, waist, key lifts vs week 1. Compare against your goals — then the next 12 weeks start heavier than these did.",
+  },
+];
+
+const TIME_OPTIONS = [
+  { mins: 30, label: "30 min", blocks: 2, roundAdj: -1, note: "First two pairs only, one fewer round — density over volume." },
+  { mins: 45, label: "45 min", blocks: 3, roundAdj: -1, note: "All pairs, trimmed rounds. Keep the rests honest." },
+  { mins: 60, label: "60 min", blocks: 3, roundAdj: 0, note: "The full session as written." },
+  { mins: 75, label: "75+ min", blocks: 3, roundAdj: 0, extraNote: "Add one extra round to the A pair, and stretch after.", note: "The full session plus an extra top-pair round." },
+];

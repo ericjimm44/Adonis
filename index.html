@@ -20,6 +20,7 @@
     <a class="nav__brand" href="#top">ADONIS<span class="nav__brand-dot">.</span></a>
     <nav class="nav__links">
       <a href="#protocol">Protocol</a>
+      <a href="#plan">Plan</a>
       <a href="#arsenal">Today</a>
       <a href="#journal">Journal</a>
     </nav>
@@ -86,10 +87,52 @@
       </div>
     </section>
 
-    <!-- ============ ARSENAL / BUILDER ============ -->
-    <section class="section section--alt" id="arsenal">
+    <!-- ============ 12-WEEK PLAN ============ -->
+    <section class="section section--alt" id="plan">
       <div class="section__head">
-        <p class="eyebrow reveal">N&nbsp;03 — Today's arsenal</p>
+        <p class="eyebrow reveal">N&nbsp;03 — The twelve weeks</p>
+        <h2 class="section__title reveal">Twelve weeks,<br /><em>one campaign.</em></h2>
+        <p class="section__lede reveal">
+          Three build waves with a deload every fourth week — the mesocycle
+          structure hypertrophy research supports. Tell it how often and how
+          long you can train; it writes the campaign.
+        </p>
+      </div>
+
+      <!-- wizard (no plan yet) -->
+      <div class="wizard" id="planWizard">
+        <div class="wizard__q reveal">
+          <p class="eyebrow">Days per week</p>
+          <div class="focus__row" id="daysRow" role="group" aria-label="Training days per week"></div>
+          <p class="focus__hint" id="daysHint"></p>
+        </div>
+        <div class="wizard__q reveal">
+          <p class="eyebrow">Time per session</p>
+          <div class="focus__row" id="timeRow" role="group" aria-label="Minutes per session"></div>
+          <p class="focus__hint" id="timeHint"></p>
+        </div>
+        <div class="build-cta reveal">
+          <button class="btn btn--primary btn--lg" id="startPlanBtn">Begin the campaign</button>
+        </div>
+      </div>
+
+      <!-- overview (plan exists) -->
+      <div class="planview" id="planView" hidden>
+        <div class="planview__meta" id="planMeta"></div>
+        <div class="weeks" id="weeksGrid"></div>
+        <p class="focus__hint" id="phaseNote"></p>
+        <div class="build-cta">
+          <a class="btn btn--primary" href="#arsenal" id="planNextBtn">Set up today's session</a>
+          <button class="btn btn--ghost btn--sm" id="resetPlanBtn">Restart plan</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ ARSENAL / BUILDER ============ -->
+    <section class="section" id="arsenal">
+      <div class="section__head">
+        <p class="eyebrow reveal">N&nbsp;04 — Today's arsenal</p>
+        <p class="upnext" id="upNext" hidden></p>
         <h2 class="section__title reveal">What do you have<br /><em>this session?</em></h2>
         <p class="section__lede reveal">
           Select the equipment in front of you right now — a full gym, a pair of
@@ -111,11 +154,13 @@
     </section>
 
     <!-- ============ WORKOUT ============ -->
-    <section class="section" id="session" hidden>
+    <section class="section section--alt" id="session" hidden>
       <div class="section__head">
-        <p class="eyebrow">N&nbsp;04 — The work</p>
+        <p class="eyebrow">N&nbsp;05 — The work</p>
         <h2 class="section__title" id="sessionTitle"></h2>
+        <p class="phasechip" id="phaseChip" hidden></p>
         <p class="section__lede" id="sessionSub"></p>
+        <p class="science" id="sessionScience"></p>
       </div>
 
       <div class="timerbar" id="timerBar">
@@ -132,10 +177,10 @@
       </div>
     </section>
 
-    <!-- ============ JOURNAL ============ -->
-    <section class="section section--alt" id="journal">
+    <!-- ============ JOURNAL & GOALS ============ -->
+    <section class="section" id="journal">
       <div class="section__head">
-        <p class="eyebrow reveal">N&nbsp;05 — The journal</p>
+        <p class="eyebrow reveal">N&nbsp;06 — The journal</p>
         <h2 class="section__title reveal">Proof of<br /><em>work.</em></h2>
       </div>
       <div class="stats reveal">
@@ -143,6 +188,22 @@
         <div class="stat"><span class="stat__num" id="statWeek">0</span><span class="stat__label">This week</span></div>
         <div class="stat"><span class="stat__num" id="statStreak">0</span><span class="stat__label">Week streak</span></div>
       </div>
+
+      <div class="goals reveal">
+        <p class="eyebrow">Goals</p>
+        <ul class="goals__list" id="goalsList"></ul>
+        <p class="log__empty" id="goalsEmpty">No goals set. A target you can't name is a target you can't hit.</p>
+        <form class="goals__form" id="goalForm" autocomplete="off">
+          <input type="text" id="goalName" placeholder="Goal (e.g. Bodyweight, Waist, Bench press)" required maxlength="40" />
+          <input type="number" id="goalCurrent" placeholder="Now" step="any" required />
+          <input type="number" id="goalTarget" placeholder="Target" step="any" required />
+          <input type="text" id="goalUnit" placeholder="Unit" maxlength="10" />
+          <button class="btn btn--ghost btn--sm" type="submit">Add goal</button>
+        </form>
+        <div class="goals__presets" id="goalPresets"></div>
+      </div>
+
+      <p class="eyebrow" style="margin-top:3.5rem">Session log</p>
       <ul class="log" id="logList"></ul>
       <p class="log__empty" id="logEmpty">No sessions yet. The statue is still in the stone.</p>
     </section>
