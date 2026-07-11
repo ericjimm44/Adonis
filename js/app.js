@@ -9,13 +9,26 @@
   "use strict";
 
   const $ = (sel) => document.querySelector(sel);
+
+  /* storage that degrades to in-memory when localStorage is unavailable
+     (private browsing, sandboxed embeds) instead of crashing */
+  const mem = {};
   const store = {
     get(key, fallback) {
-      try { return JSON.parse(localStorage.getItem(key)) ?? fallback; }
-      catch { return fallback; }
+      try {
+        const raw = localStorage.getItem(key);
+        if (raw !== null) return JSON.parse(raw) ?? fallback;
+      } catch { /* fall through to mem */ }
+      return key in mem ? mem[key] : fallback;
     },
-    set(key, val) { localStorage.setItem(key, JSON.stringify(val)); },
-    del(key) { localStorage.removeItem(key); },
+    set(key, val) {
+      mem[key] = val;
+      try { localStorage.setItem(key, JSON.stringify(val)); } catch { /* memory only */ }
+    },
+    del(key) {
+      delete mem[key];
+      try { localStorage.removeItem(key); } catch { /* memory only */ }
+    },
   };
 
   const KEY_EQUIP = "adonis.equip";
