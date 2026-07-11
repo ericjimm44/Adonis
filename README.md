@@ -36,15 +36,30 @@ Programming principles are modeled on the publicized Killmonger prep style:
 high-volume 10–15 rep hypertrophy work, supersets, short rests, side-delt and
 lat priority for the shoulder-to-waist ratio, and fight conditioning to stay lean.
 
+## Install it on your phone (PWA)
+
+ADONIS is an installable, **offline-first** app. Once you've opened it over
+HTTPS (GitHub Pages counts), a service worker caches the whole app so it loads
+instantly and works with **zero signal** — exactly what a gym basement needs.
+
+- **iPhone (Safari):** Share → *Add to Home Screen*.
+- **Android / desktop Chrome:** tap the **Install app** button in the nav, or
+  use the browser's install prompt.
+
+Installed, it runs full-screen with its own icon, keeps the screen awake during
+a session, and stores your plan, weights, and goals on-device.
+
 ## Running it
 
-No build step, no dependencies. Open `index.html` in a browser, or serve the folder:
+No build step, no dependencies. Serve the folder over HTTP (a service worker
+won't register from `file://`):
 
 ```sh
 python3 -m http.server 8000
 ```
 
-To publish with **GitHub Pages**: repo Settings → Pages → deploy from branch → root.
+To publish with **GitHub Pages**: repo Settings → Pages → deploy from branch →
+pick this branch (or `main`) → root.
 
 ## Stack
 

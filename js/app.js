@@ -407,6 +407,7 @@
       </article>`).join("");
 
     $("#session").hidden = false;
+    requestWake();
   }
 
   $("#workoutBlocks").addEventListener("click", (ev) => {
@@ -536,6 +537,7 @@
     currentSession = null;
     store.del(KEY_ACTIVE);
     $("#session").hidden = true;
+    releaseWake();
     renderPlan();
     renderJournal();
     updateFocusHint();
@@ -666,6 +668,42 @@
       return `<li><span class="log__name">${esc(l.title)}</span><span class="log__meta">${when}${wk} · ${l.done}/${l.total} sets</span></li>`;
     }).join("");
   }
+
+  /* ================= PWA: install prompt & wake lock ================= */
+
+  // Install button — appears only when the browser offers installation.
+  let deferredPrompt = null;
+  const installBtn = $("#installBtn");
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    installBtn.hidden = false;
+  });
+  installBtn.addEventListener("click", async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    installBtn.hidden = true;
+  });
+  window.addEventListener("appinstalled", () => { installBtn.hidden = true; });
+
+  // Keep the screen awake while a session is open (best-effort; not in all browsers).
+  let wakeLock = null;
+  async function requestWake() {
+    try {
+      if ("wakeLock" in navigator && !$("#session").hidden) {
+        wakeLock = await navigator.wakeLock.request("screen");
+      }
+    } catch { /* denied or unsupported — ignore */ }
+  }
+  function releaseWake() {
+    try { wakeLock && wakeLock.release(); } catch { /* ignore */ }
+    wakeLock = null;
+  }
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && !$("#session").hidden) requestWake();
+  });
 
   /* ================= scroll reveals ================= */
 

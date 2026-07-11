@@ -100,6 +100,8 @@ em { font-style: italic; color: var(--gold); }
 }
 .nav__links a:hover { color: var(--gold); }
 
+.nav__right { display: flex; align-items: center; gap: 0.7rem; }
+
 .nav__streak {
   font-size: 0.68rem;
   letter-spacing: 0.2em;
@@ -110,6 +112,23 @@ em { font-style: italic; color: var(--gold); }
   padding: 0.35rem 0.9rem;
   white-space: nowrap;
 }
+
+.nav__install {
+  font-family: var(--sans);
+  font-size: 0.66rem;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #16100c;
+  background: var(--ember);
+  border: 1px solid var(--ember);
+  border-radius: 999px;
+  padding: 0.4rem 1rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.4s, border-color 0.4s;
+}
+.nav__install:hover { background: var(--gold); border-color: var(--gold); }
 
 @media (max-width: 640px) {
   .nav__streak { display: none; }
