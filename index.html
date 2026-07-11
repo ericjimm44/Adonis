@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ADONIS — The Killmonger Protocol</title>
+  <meta name="description" content="A workout companion built for one goal: the Michael B. Jordan physique. Equipment-adaptive sessions, Killmonger-style volume." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐆</text></svg>" />
+</head>
+<body>
+
+  <div class="grain" aria-hidden="true"></div>
+
+  <!-- ============ NAV ============ -->
+  <header class="nav">
+    <a class="nav__brand" href="#top">ADONIS<span class="nav__brand-dot">.</span></a>
+    <nav class="nav__links">
+      <a href="#protocol">Protocol</a>
+      <a href="#arsenal">Today</a>
+      <a href="#journal">Journal</a>
+    </nav>
+    <div class="nav__streak" id="navStreak" title="Sessions logged">— sessions</div>
+  </header>
+
+  <main id="top">
+
+    <!-- ============ HERO ============ -->
+    <section class="hero">
+      <p class="eyebrow reveal">N&nbsp;01 — The objective</p>
+      <h1 class="hero__title">
+        <span class="reveal">The Adonis /</span>
+        <span class="reveal reveal--d1"><em>Killmonger</em> body.</span>
+      </h1>
+      <p class="hero__sub reveal reveal--d2">
+        One physique. One standard. Broad shoulders, a carved chest, a
+        V&#8209;taper back and a fighter's conditioning — built session by
+        session, with whatever equipment the day gives you.
+      </p>
+      <div class="hero__cta reveal reveal--d3">
+        <a class="btn btn--primary" href="#arsenal">Build today's session</a>
+        <a class="btn btn--ghost" href="#protocol">Read the protocol</a>
+      </div>
+      <div class="hero__scroll" aria-hidden="true"><span></span></div>
+    </section>
+
+    <!-- ============ PROTOCOL ============ -->
+    <section class="section" id="protocol">
+      <div class="section__head">
+        <p class="eyebrow reveal">N&nbsp;02 — The protocol</p>
+        <h2 class="section__title reveal">Train like the villain<br /><em>looked like the god.</em></h2>
+        <p class="section__lede reveal">
+          The Killmonger build came from high-volume hypertrophy work, relentless
+          supersets, short rests and fighter conditioning. This app encodes those
+          principles into every session it writes for you.
+        </p>
+      </div>
+      <div class="pillars">
+        <article class="pillar reveal">
+          <span class="pillar__num">I</span>
+          <h3>Volume is the language</h3>
+          <p>10–15 rep hypertrophy ranges, multiple angles per muscle, chasing the pump — not one-rep maxes.</p>
+        </article>
+        <article class="pillar reveal">
+          <span class="pillar__num">II</span>
+          <h3>Supersets, short rests</h3>
+          <p>Paired movements back to back, 30–60 seconds between rounds. Density does the sculpting.</p>
+        </article>
+        <article class="pillar reveal">
+          <span class="pillar__num">III</span>
+          <h3>The Adonis ratio</h3>
+          <p>Shoulders and lats get priority every week. Width up top, tight through the waist — that's the silhouette.</p>
+        </article>
+        <article class="pillar reveal">
+          <span class="pillar__num">IV</span>
+          <h3>A fighter's engine</h3>
+          <p>Boxing rounds, intervals and core circuits keep you lean enough for the detail to show.</p>
+        </article>
+      </div>
+      <div class="split reveal">
+        <p class="eyebrow">The rotation</p>
+        <ol class="split__list" id="splitList"></ol>
+      </div>
+    </section>
+
+    <!-- ============ ARSENAL / BUILDER ============ -->
+    <section class="section section--alt" id="arsenal">
+      <div class="section__head">
+        <p class="eyebrow reveal">N&nbsp;03 — Today's arsenal</p>
+        <h2 class="section__title reveal">What do you have<br /><em>this session?</em></h2>
+        <p class="section__lede reveal">
+          Select the equipment in front of you right now — a full gym, a pair of
+          dumbbells, or nothing at all. The session adapts to the tools.
+        </p>
+      </div>
+
+      <div class="equip" id="equipGrid" role="group" aria-label="Available equipment"></div>
+
+      <div class="focus reveal">
+        <p class="eyebrow">Session focus</p>
+        <div class="focus__row" id="focusRow" role="group" aria-label="Session focus"></div>
+        <p class="focus__hint" id="focusHint"></p>
+      </div>
+
+      <div class="build-cta reveal">
+        <button class="btn btn--primary btn--lg" id="buildBtn">Forge the session</button>
+      </div>
+    </section>
+
+    <!-- ============ WORKOUT ============ -->
+    <section class="section" id="session" hidden>
+      <div class="section__head">
+        <p class="eyebrow">N&nbsp;04 — The work</p>
+        <h2 class="section__title" id="sessionTitle"></h2>
+        <p class="section__lede" id="sessionSub"></p>
+      </div>
+
+      <div class="timerbar" id="timerBar">
+        <button class="btn btn--ghost btn--sm" id="restBtn" data-secs="45">Rest 45s</button>
+        <button class="btn btn--ghost btn--sm" id="restBtnLong" data-secs="90">Rest 90s</button>
+        <span class="timerbar__clock" id="restClock" hidden>00:45</span>
+      </div>
+
+      <div class="blocks" id="workoutBlocks"></div>
+
+      <div class="build-cta">
+        <button class="btn btn--ghost" id="rerollBtn">Reforge (new variations)</button>
+        <button class="btn btn--primary btn--lg" id="finishBtn">Complete session</button>
+      </div>
+    </section>
+
+    <!-- ============ JOURNAL ============ -->
+    <section class="section section--alt" id="journal">
+      <div class="section__head">
+        <p class="eyebrow reveal">N&nbsp;05 — The journal</p>
+        <h2 class="section__title reveal">Proof of<br /><em>work.</em></h2>
+      </div>
+      <div class="stats reveal">
+        <div class="stat"><span class="stat__num" id="statTotal">0</span><span class="stat__label">Sessions</span></div>
+        <div class="stat"><span class="stat__num" id="statWeek">0</span><span class="stat__label">This week</span></div>
+        <div class="stat"><span class="stat__num" id="statStreak">0</span><span class="stat__label">Week streak</span></div>
+      </div>
+      <ul class="log" id="logList"></ul>
+      <p class="log__empty" id="logEmpty">No sessions yet. The statue is still in the stone.</p>
+    </section>
+
+    <footer class="footer">
+      <p class="footer__big">Everything on this earth is earned.</p>
+      <p class="footer__small">ADONIS — a personal training companion. Not affiliated with any film or studio. Train smart; consult a professional for medical advice.</p>
+    </footer>
+
+  </main>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
