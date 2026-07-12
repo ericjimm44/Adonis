@@ -42,6 +42,7 @@
   let selectedEquip = new Set(store.get(KEY_EQUIP, []));
   let techPref = store.get(KEY_TECH, {}); // { exerciseName: techniqueId } — remembered per lift
   let selectedFocus = "auto";
+  let sessTime = (store.get(KEY_PLAN, null) || {}).mins || 60; // minutes available for today's session
   let wizDays = 4;
   let wizTime = 60;
   let currentSession = store.get(KEY_ACTIVE, null);
@@ -110,8 +111,10 @@
 
   $("#startPlanBtn").addEventListener("click", () => {
     createPlan(wizDays, wizTime);
+    sessTime = wizTime;
     renderPlan();
     renderFocus();
+    renderTimeToday();
     $("#plan").scrollIntoView({ behavior: "smooth" });
   });
 
@@ -241,7 +244,7 @@
       const phase = phaseForWeek(next.week);
       eyebrow.textContent = `Today — Week ${next.week} · ${phase.name}`;
       title.textContent = PROGRAM[next.dayKey].title;
-      meta.textContent = `~${plan.mins} min · ${phase.reps} reps · ${phase.rpe}`;
+      meta.textContent = `~${sessTime} min · ${phase.reps} reps · ${phase.rpe}`;
       setCta("Start workout", "#arsenal");
     } else if (plan && !next) {
       eyebrow.textContent = "Campaign complete";
@@ -318,6 +321,25 @@
       note.textContent = `${n} tool${n === 1 ? "" : "s"} selected — the session will use the best variations they allow.`;
     }
   }
+
+  /* ================= time-today chips ================= */
+
+  function renderTimeToday() {
+    $("#timeTodayRow").innerHTML = TIME_OPTIONS.map((t) =>
+      `<button type="button" class="focus__chip${t.mins === sessTime ? " is-on" : ""}" data-mins="${t.mins}">${t.label}</button>`).join("");
+    const opt = TIME_OPTIONS.find((t) => t.mins === sessTime) || TIME_OPTIONS[2];
+    const plan = getPlan();
+    const planNote = plan && plan.mins !== sessTime ? ` (your plan default is ${plan.mins} min).` : ".";
+    $("#timeTodayHint").textContent = opt.note.replace(/\.$/, "") + planNote;
+  }
+
+  $("#timeTodayRow").addEventListener("click", (ev) => {
+    const chip = ev.target.closest("[data-mins]");
+    if (!chip) return;
+    sessTime = +chip.dataset.mins;
+    renderTimeToday();
+    updateHomeState();
+  });
 
   /* ================= focus chips ================= */
 
@@ -481,9 +503,8 @@
 
     const day = PROGRAM[dayKey];
     const phase = planNext ? phaseForWeek(planNext.week) : null;
-    const timeOpt = plan
-      ? TIME_OPTIONS.find((t) => t.mins === plan.mins) || TIME_OPTIONS[2]
-      : TIME_OPTIONS[2];
+    // Use the time chosen for today (defaults to the plan's session length).
+    const timeOpt = TIME_OPTIONS.find((t) => t.mins === sessTime) || TIME_OPTIONS[2];
 
     const prev = reroll && currentSession && currentSession.dayKey === dayKey ? currentSession : null;
     const blocks = day.blocks.slice(0, timeOpt.blocks);
@@ -1264,9 +1285,10 @@
       selectedEquip = new Set(store.get(KEY_EQUIP, []));
       currentSession = store.get(KEY_ACTIVE, null);
       techPref = store.get(KEY_TECH, {});
+      sessTime = (store.get(KEY_PLAN, null) || {}).mins || 60;
       progSel = null;
       measSel = null;
-      renderPlan(); renderFocus(); renderEquip();
+      renderPlan(); renderFocus(); renderEquip(); renderTimeToday();
       renderGoals(); renderJournal(); renderProgress(); renderMeasurements();
       if (currentSession) renderSession(); else $("#session").hidden = true;
       alert("Backup imported. Your plan, logs, and goals are restored.");
@@ -1380,6 +1402,7 @@
   renderEquip();
   renderEquipNote();
   renderWizard();
+  renderTimeToday();
   renderPlan();
   renderFocus();
   updateHomeState();

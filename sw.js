@@ -1,6 +1,8 @@
 /* ADONIS service worker — offline app shell.
-   Bump CACHE when any shell file changes to roll users onto the new version. */
-const CACHE = "adonis-v3";
+   Strategy: network-first for same-origin requests when online (so a new
+   deploy is picked up immediately — no stale CSS/JS against fresh HTML),
+   falling back to the cache when offline. Bump CACHE on any shell change. */
+const CACHE = "adonis-v5";
 
 const SHELL = [
   "./",
@@ -35,33 +37,20 @@ self.addEventListener("fetch", (event) => {
   const req = event.request;
   if (req.method !== "GET" || new URL(req.url).origin !== self.location.origin) return;
 
-  // Navigations: network-first, fall back to cached shell when offline.
-  if (req.mode === "navigate") {
-    event.respondWith(
-      fetch(req)
-        .then((res) => {
+  // Network-first: fresh when online, cached shell when offline.
+  event.respondWith(
+    fetch(req)
+      .then((res) => {
+        if (res && res.status === 200 && res.type === "basic") {
           const copy = res.clone();
           caches.open(CACHE).then((c) => c.put(req, copy));
-          return res;
-        })
-        .catch(() => caches.match(req).then((r) => r || caches.match("./index.html")))
-    );
-    return;
-  }
-
-  // Assets: stale-while-revalidate — instant from cache, refresh in background.
-  event.respondWith(
-    caches.match(req).then((cached) => {
-      const network = fetch(req)
-        .then((res) => {
-          if (res && res.status === 200) {
-            const copy = res.clone();
-            caches.open(CACHE).then((c) => c.put(req, copy));
-          }
-          return res;
-        })
-        .catch(() => cached);
-      return cached || network;
-    })
+        }
+        return res;
+      })
+      .catch(() =>
+        caches.match(req).then((cached) =>
+          cached || (req.mode === "navigate" ? caches.match("./index.html") : Promise.reject("offline"))
+        )
+      )
   );
 });
