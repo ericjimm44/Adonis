@@ -648,6 +648,10 @@
   $("#finishBtn").addEventListener("click", () => {
     if (!currentSession) return;
 
+    // one shared timestamp across log/plan/history, so deleting the
+    // journal entry can find and revert everything this finish wrote
+    const stamp = new Date().toISOString();
+
     // save exercise history (only sets marked done, or with reps entered)
     const hist = getHist();
     let done = 0, total = 0;
@@ -657,7 +661,7 @@
       done += x.sets.filter((s) => s.done).length;
       if (logged.length) {
         (hist[x.name] = hist[x.name] || []).push({
-          date: new Date().toISOString(),
+          date: stamp,
           sets: logged.map((s) => ({ w: s.w || "", r: s.r || "" })),
         });
         if (hist[x.name].length > 30) hist[x.name] = hist[x.name].slice(-30);
@@ -672,7 +676,7 @@
       const next = nextPlanSession(plan);
       if (next) {
         next.done = true;
-        next.doneAt = new Date().toISOString();
+        next.doneAt = stamp;
         store.set(KEY_PLAN, plan);
         weekInfo = `W${next.week}`;
       }
@@ -681,7 +685,7 @@
     // journal entry
     const log = store.get(KEY_LOG, []);
     log.push({
-      date: new Date().toISOString(),
+      date: stamp,
       dayKey: currentSession.dayKey,
       title: PROGRAM[currentSession.dayKey].title,
       week: weekInfo,
@@ -699,6 +703,62 @@
     updateFocusHint();
     $("#journal").scrollIntoView({ behavior: "smooth" });
   });
+
+  // Discard an in-progress session: nothing is logged, the plan doesn't advance.
+  $("#discardBtn").addEventListener("click", () => {
+    if (!currentSession) return;
+    if (!confirm("Discard this session? Nothing will be logged and the plan won't advance.")) return;
+    currentSession = null;
+    store.del(KEY_ACTIVE);
+    $("#session").hidden = true;
+    releaseWake();
+    $("#arsenal").scrollIntoView({ behavior: "smooth" });
+  });
+
+  // Delete a submitted session: removes the journal entry and reverts what
+  // that finish wrote — the plan slot it completed and the exercise history
+  // it recorded (so prefill, hints, and charts forget it too).
+  function deleteLogEntry(idx) {
+    const log = store.get(KEY_LOG, []);
+    const entry = log[idx];
+    if (!entry) return;
+    const when = new Date(entry.date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+    if (!confirm(`Delete "${entry.title}" (${when})? This also removes the weights logged in that session and re-opens its slot in the plan.`)) return;
+
+    log.splice(idx, 1);
+    store.set(KEY_LOG, log);
+
+    const t = new Date(entry.date).getTime();
+    const near = (iso) => iso && Math.abs(new Date(iso).getTime() - t) < 10000;
+
+    // re-open the plan slot (exact stamp match; fall back to the most
+    // recent completed slot of the same day type for older entries)
+    const plan = getPlan();
+    if (plan) {
+      let sess = plan.sessions.filter((s) => s.done && near(s.doneAt)).pop();
+      if (!sess && entry.week) {
+        sess = plan.sessions.filter((s) => s.done && s.dayKey === entry.dayKey).pop();
+      }
+      if (sess) {
+        sess.done = false;
+        delete sess.doneAt;
+        store.set(KEY_PLAN, plan);
+      }
+    }
+
+    // drop the history entries written by that same finish
+    const hist = getHist();
+    Object.keys(hist).forEach((name) => {
+      hist[name] = hist[name].filter((e) => !near(e.date));
+      if (!hist[name].length) delete hist[name];
+    });
+    store.set(KEY_HIST, hist);
+
+    renderPlan();
+    renderJournal();
+    renderProgress();
+    updateFocusHint();
+  }
 
   /* ================= goals ================= */
 
@@ -1169,13 +1229,19 @@
       return;
     }
     empty.hidden = true;
-    list.innerHTML = [...log].reverse().slice(0, 14).map((l) => {
+    list.innerHTML = log.map((l, i) => ({ l, i })).reverse().slice(0, 14).map(({ l, i }) => {
       const d = new Date(l.date);
       const when = d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
       const wk = l.week ? ` · ${l.week}` : "";
-      return `<li><span class="log__name">${esc(l.title)}</span><span class="log__meta">${when}${wk} · ${l.done}/${l.total} sets</span></li>`;
+      return `<li><span class="log__name">${esc(l.title)}</span><span class="log__meta">${when}${wk} · ${l.done}/${l.total} sets
+        <button type="button" class="goal__del" data-logdel="${i}" aria-label="Delete this session" title="Delete session">✕</button></span></li>`;
     }).join("");
   }
+
+  $("#logList").addEventListener("click", (ev) => {
+    const btn = ev.target.closest("[data-logdel]");
+    if (btn) deleteLogEntry(+btn.dataset.logdel);
+  });
 
   /* ================= PWA: install prompt & wake lock ================= */
 
