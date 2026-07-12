@@ -413,6 +413,18 @@ em { font-style: italic; color: var(--gold); }
   color: var(--sand);
   font-size: 0.85rem;
 }
+.technique__saved {
+  display: inline-block;
+  margin-left: 0.6rem;
+  font-size: 0.6rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold);
+  border: 1px solid rgba(217, 163, 94, 0.5);
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+  vertical-align: middle;
+}
 
 .autoreg {
   grid-column: 1 / -1;

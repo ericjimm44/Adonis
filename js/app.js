@@ -37,8 +37,10 @@
   const KEY_HIST = "adonis.hist";
   const KEY_GOALS = "adonis.goals";
   const KEY_ACTIVE = "adonis.active";
+  const KEY_TECH = "adonis.tech";
 
   let selectedEquip = new Set(store.get(KEY_EQUIP, []));
+  let techPref = store.get(KEY_TECH, {}); // { exerciseName: techniqueId } — remembered per lift
   let selectedFocus = "auto";
   let wizDays = 4;
   let wizTime = 60;
@@ -375,7 +377,8 @@
       last: last ? fmtLast(last) : null,
       hint: progressionHint(chosen.name, phase),
       baseTarget: target || { lo: 8, hi: 12 },
-      technique: null,
+      technique: techPref[chosen.name] || null, // auto-apply a remembered technique
+      techRemembered: !!techPref[chosen.name],
       sets: Array.from({ length: rounds }, (_, i) => ({
         w: last && last.sets[i] ? last.sets[i].w : "",
         r: last && last.sets[i] ? last.sets[i].r : "",
@@ -492,7 +495,7 @@
             </div>
             <p class="exercise__meta">${esc(x.meta)} · target ${tgt.lo}–${tgt.hi} reps</p>
             <p class="exercise__cue">${esc(x.cue)}</p>
-            ${tech ? `<p class="technique">⚡ ${esc(tech.name)} — ${esc(tech.cue)}</p>` : ""}
+            ${tech ? `<p class="technique">⚡ ${esc(tech.name)} — ${esc(tech.cue)}<span class="technique__saved">saved for this lift</span></p>` : ""}
             ${x.last ? `<p class="exercise__last">${esc(x.last)}</p>` : ""}
             <p class="exercise__cue">${esc(x.hint)}</p>
             <div class="setrows">
@@ -543,10 +546,15 @@
   });
 
   // Cycle: none → technique 1 → … → technique N → none.
+  // The choice is remembered per lift, so it auto-applies next time.
   function cycleIntensity(bi, si) {
     const ex = currentSession.blocks[bi].exercises[si];
     const ids = [null, ...INTENSITY.map((t) => t.id)];
     ex.technique = ids[(ids.indexOf(ex.technique || null) + 1) % ids.length];
+    ex.techRemembered = true; // it's now saved for this lift
+    if (ex.technique) techPref[ex.name] = ex.technique;
+    else delete techPref[ex.name];
+    store.set(KEY_TECH, techPref);
     saveActive();
     renderSession();
   }
@@ -909,7 +917,7 @@
 
   /* ================= data backup (export / import) ================= */
 
-  const DATA_KEYS = [KEY_EQUIP, KEY_LOG, KEY_PLAN, KEY_HIST, KEY_GOALS, KEY_ACTIVE];
+  const DATA_KEYS = [KEY_EQUIP, KEY_LOG, KEY_PLAN, KEY_HIST, KEY_GOALS, KEY_ACTIVE, KEY_TECH];
 
   $("#exportBtn").addEventListener("click", () => {
     const dump = { app: "ADONIS", version: 1, exportedAt: new Date().toISOString(), data: {} };
@@ -945,6 +953,7 @@
       // reload in-memory state from the imported data
       selectedEquip = new Set(store.get(KEY_EQUIP, []));
       currentSession = store.get(KEY_ACTIVE, null);
+      techPref = store.get(KEY_TECH, {});
       progSel = null;
       renderPlan(); renderFocus(); renderEquip();
       renderGoals(); renderJournal(); renderProgress();
