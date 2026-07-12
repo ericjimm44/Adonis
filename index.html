@@ -51,9 +51,27 @@
         V&#8209;taper back and a fighter's conditioning — built session by
         session, with whatever equipment the day gives you.
       </p>
+      <div class="today reveal reveal--d3" id="todayCard">
+        <div class="today__ring" aria-hidden="false">
+          <svg viewBox="0 0 84 84" role="img" aria-label="Sessions completed this week" id="ringSvg">
+            <circle class="ring__track" cx="42" cy="42" r="36" />
+            <circle class="ring__fill" cx="42" cy="42" r="36" id="ringFill" />
+          </svg>
+          <div class="today__ringcenter">
+            <span class="today__ringnum" id="ringNum">0</span>
+            <span class="today__ringlabel" id="ringLabel">this wk</span>
+          </div>
+        </div>
+        <div class="today__info">
+          <p class="today__eyebrow" id="todayEyebrow">Today</p>
+          <h2 class="today__title" id="todayTitle">—</h2>
+          <p class="today__meta" id="todayMeta"></p>
+          <p class="today__sub" id="todaySub"></p>
+        </div>
+        <a class="btn btn--primary today__btn" id="todayBtn" href="#arsenal">Start workout</a>
+      </div>
       <div class="hero__cta reveal reveal--d3">
-        <a class="btn btn--primary" href="#plan" id="heroCta">Build my 12-week plan</a>
-        <a class="btn btn--ghost" href="#protocol">Read the protocol</a>
+        <a class="btn btn--ghost btn--sm" href="#protocol">Read the protocol</a>
       </div>
       <div class="hero__scroll" aria-hidden="true"><span></span></div>
     </section>
@@ -181,19 +199,27 @@
         <h2 class="section__title" id="sessionTitle"></h2>
         <p class="phasechip" id="phaseChip" hidden></p>
         <p class="section__lede" id="sessionSub"></p>
-        <p class="science" id="sessionScience"></p>
-        <p class="lighttip">
-          Weight too light today? Tap <strong>⚡ Intensify</strong> on any move — a
-          light load taken close to failure builds muscle just like a heavy one.
-          Log your real reps and each set tells you what to adjust next. Whatever
-          you pick is <strong>remembered for that lift</strong> next time.
-        </p>
+        <details class="fold">
+          <summary>The science — why this day is built this way</summary>
+          <p class="science" id="sessionScience"></p>
+        </details>
+        <details class="fold">
+          <summary>⚡ Weight too light today?</summary>
+          <p class="lighttip">
+            Tap <strong>⚡ Intensify</strong> on any move — a light load taken
+            close to failure builds muscle just like a heavy one. Log your real
+            reps and each set tells you what to adjust next. Whatever you pick is
+            <strong>remembered for that lift</strong> next time.
+          </p>
+        </details>
       </div>
 
       <div class="timerbar" id="timerBar">
         <button class="btn btn--ghost btn--sm" id="restBtn" data-secs="45">Rest 45s</button>
         <button class="btn btn--ghost btn--sm" id="restBtnLong" data-secs="90">Rest 90s</button>
         <span class="timerbar__clock" id="restClock" hidden>00:45</span>
+        <span class="timerbar__sets" id="setsDone" hidden></span>
+        <span class="timerbar__bar" aria-hidden="true"><span id="setsBar"></span></span>
       </div>
 
       <div class="blocks" id="workoutBlocks"></div>
@@ -317,6 +343,12 @@
     </footer>
 
   </main>
+
+  <nav class="actionbar" aria-label="Quick actions">
+    <a href="#plan" class="actionbar__link">Plan</a>
+    <a href="#arsenal" class="actionbar__cta" id="barCta">Start workout</a>
+    <a href="#journal" class="actionbar__link">Journal</a>
+  </nav>
 
   <script src="js/data.js"></script>
   <script src="js/app.js"></script>

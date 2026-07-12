@@ -191,22 +191,85 @@
     return Math.floor((Date.now() - last.getTime()) / 86400000);
   }
 
-  // Adapt the hero call-to-action to where the user actually is.
+  // The Today card + bottom bar: one state-aware answer to
+  // "what do I train today, and where do I start?"
   function updateHomeState() {
-    const cta = $("#heroCta");
-    if (!cta) return;
     const plan = getPlan();
     const next = plan ? nextPlanSession(plan) : null;
-    if (!plan) {
-      cta.textContent = "Build my 12-week plan";
-      cta.setAttribute("href", "#plan");
-    } else if (next) {
-      cta.textContent = `Continue — Week ${next.week}`;
-      cta.setAttribute("href", "#arsenal");
+    const log = store.get(KEY_LOG, []);
+    const weekDone = log.filter((l) => weekId(l.date) === weekId(new Date())).length;
+    const weekTarget = plan ? plan.days : 3;
+
+    // weekly ring
+    const C = 226.2;
+    const frac = Math.min(1, weekTarget ? weekDone / weekTarget : 0);
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        $("#ringFill").style.strokeDashoffset = (C * (1 - frac)).toFixed(1);
+      }));
+    $("#ringNum").textContent = weekDone;
+    $("#ringLabel").textContent = `of ${weekTarget} this wk`;
+    $("#ringSvg").setAttribute("aria-label", `${weekDone} of ${weekTarget} sessions this week`);
+
+    // streak + total line
+    const weeks = new Set(log.map((l) => weekId(l.date)));
+    let streak = 0;
+    const cursor = new Date();
+    if (!weeks.has(weekId(cursor))) cursor.setDate(cursor.getDate() - 7);
+    while (weeks.has(weekId(cursor))) { streak += 1; cursor.setDate(cursor.getDate() - 7); }
+    $("#todaySub").textContent = log.length
+      ? `${streak > 0 ? `${streak}-week streak · ` : ""}${log.length} session${log.length === 1 ? "" : "s"} logged`
+      : "Session one is waiting.";
+
+    // state-aware card + CTAs
+    const eyebrow = $("#todayEyebrow"), title = $("#todayTitle"), meta = $("#todayMeta");
+    const btn = $("#todayBtn"), bar = $("#barCta");
+    const setCta = (label, href) => {
+      btn.textContent = label; btn.setAttribute("href", href);
+      bar.textContent = label; bar.setAttribute("href", href);
+    };
+
+    if (currentSession) {
+      const day = PROGRAM[currentSession.dayKey];
+      eyebrow.textContent = "In progress";
+      title.textContent = day.title;
+      meta.textContent = currentSession.phaseName
+        ? `Week ${currentSession.week} · ${currentSession.phaseName}`
+        : "Freestyle session";
+      setCta("Resume workout", "#session");
+    } else if (plan && next) {
+      const phase = phaseForWeek(next.week);
+      eyebrow.textContent = `Today — Week ${next.week} · ${phase.name}`;
+      title.textContent = PROGRAM[next.dayKey].title;
+      meta.textContent = `~${plan.mins} min · ${phase.reps} reps · ${phase.rpe}`;
+      setCta("Start workout", "#arsenal");
+    } else if (plan && !next) {
+      eyebrow.textContent = "Campaign complete";
+      title.textContent = "Twelve weeks, done.";
+      meta.textContent = "Measure, compare, then go again heavier.";
+      setCta("Start next 12 weeks", "#plan");
     } else {
-      cta.textContent = "Start your next 12 weeks";
-      cta.setAttribute("href", "#plan");
+      eyebrow.textContent = "Begin";
+      title.textContent = "Build your 12-week plan";
+      meta.textContent = "Two questions — training days and session length.";
+      setCta("Build my plan", "#plan");
     }
+  }
+
+  /* ================= motion: count-up numbers ================= */
+
+  const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function countUp(el) {
+    const target = parseInt(el.textContent, 10);
+    if (REDUCED || !target || target > 999) return;
+    const t0 = performance.now(), dur = 900;
+    const tick = (t) => {
+      const p = Math.min(1, (t - t0) / dur);
+      el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3)));
+      if (p < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
   }
 
   /* ================= split list (protocol) ================= */
@@ -518,7 +581,23 @@
       </article>`).join("");
 
     $("#session").hidden = false;
+    updateSetsProgress();
+    updateHomeState();
     requestWake();
+  }
+
+  // Live "sets done" readout + progress bar in the sticky timer bar.
+  function updateSetsProgress() {
+    const out = $("#setsDone"), bar = $("#setsBar");
+    if (!currentSession) { out.hidden = true; bar.style.width = "0"; return; }
+    let done = 0, total = 0;
+    currentSession.blocks.forEach((b) => b.exercises.forEach((x) => {
+      done += x.sets.filter((s) => s.done).length;
+      total += x.sets.length;
+    }));
+    out.hidden = false;
+    out.textContent = `${done} / ${total} sets`;
+    bar.style.width = total ? `${Math.round((done / total) * 100)}%` : "0";
   }
 
   // The rest a block prescribes ("rest 60s", "1 min rest") — default 45s.
@@ -540,6 +619,7 @@
       dot.classList.toggle("is-done", set.done);
       dot.setAttribute("aria-pressed", set.done);
       saveActive();
+      updateSetsProgress();
       // completing a set starts the block's prescribed rest automatically
       if (set.done) startRest(schemeRest(currentSession.blocks[b].scheme));
       return;
@@ -712,6 +792,7 @@
     store.del(KEY_ACTIVE);
     $("#session").hidden = true;
     releaseWake();
+    updateHomeState();
     $("#arsenal").scrollIntoView({ behavior: "smooth" });
   });
 
@@ -1285,6 +1366,7 @@
     entries.forEach((en) => {
       if (en.isIntersecting) {
         en.target.classList.add("is-in");
+        en.target.querySelectorAll(".stat__num").forEach(countUp);
         io.unobserve(en.target);
       }
     });
