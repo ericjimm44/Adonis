@@ -52,7 +52,7 @@
         session, with whatever equipment the day gives you.
       </p>
       <div class="hero__cta reveal reveal--d3">
-        <a class="btn btn--primary" href="#arsenal">Build today's session</a>
+        <a class="btn btn--primary" href="#plan" id="heroCta">Build my 12-week plan</a>
         <a class="btn btn--ghost" href="#protocol">Read the protocol</a>
       </div>
       <div class="hero__scroll" aria-hidden="true"><span></span></div>
@@ -128,9 +128,19 @@
 
       <!-- overview (plan exists) -->
       <div class="planview" id="planView" hidden>
+        <div class="welcome" id="welcomeBack" hidden>
+          <p class="welcome__title" id="welcomeTitle"></p>
+          <p class="welcome__note" id="welcomeNote"></p>
+        </div>
         <div class="planview__meta" id="planMeta"></div>
         <div class="weeks" id="weeksGrid"></div>
         <p class="focus__hint" id="phaseNote"></p>
+        <p class="jargon">
+          <strong>New to this?</strong> <em>RPE</em> is just how hard a set feels:
+          "RPE 8" means you stop with about 2 solid reps still in you. Start each
+          new lift with a weight that leaves 2–3 reps in the tank — the app tells
+          you when to add weight.
+        </p>
         <div class="build-cta">
           <a class="btn btn--primary" href="#arsenal" id="planNextBtn">Set up today's session</a>
           <button class="btn btn--ghost btn--sm" id="resetPlanBtn">Restart plan</button>
@@ -160,6 +170,7 @@
 
       <div class="build-cta reveal">
         <button class="btn btn--primary btn--lg" id="buildBtn">Forge the session</button>
+        <p class="equipnote" id="equipNote" hidden></p>
       </div>
     </section>
 

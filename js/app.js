@@ -164,6 +164,47 @@
       $("#upNext").textContent =
         `Up next — Week ${next.week}, session ${next.slot + 1}: ${PROGRAM[next.dayKey].title} · ${phase.name} (${phase.rpe}, ${phase.reps} reps).`;
     }
+
+    // Welcome-back band: surface a paused plan instead of stalling silently.
+    const wb = $("#welcomeBack");
+    const days = daysSinceLastActivity();
+    if (next && days !== null && days >= 10) {
+      wb.hidden = false;
+      $("#welcomeTitle").textContent = "Welcome back.";
+      $("#welcomeNote").textContent =
+        `It's been ${days} days. You paused at Week ${curWeek} — pick up exactly where you left off with ${PROGRAM[next.dayKey].title}, or restart the plan below. The statue doesn't finish itself.`;
+    } else {
+      wb.hidden = true;
+    }
+
+    updateHomeState();
+  }
+
+  /* ================= home orientation ================= */
+
+  function daysSinceLastActivity() {
+    const log = store.get(KEY_LOG, []);
+    if (!log.length) return null;
+    const last = new Date(log[log.length - 1].date);
+    return Math.floor((Date.now() - last.getTime()) / 86400000);
+  }
+
+  // Adapt the hero call-to-action to where the user actually is.
+  function updateHomeState() {
+    const cta = $("#heroCta");
+    if (!cta) return;
+    const plan = getPlan();
+    const next = plan ? nextPlanSession(plan) : null;
+    if (!plan) {
+      cta.textContent = "Build my 12-week plan";
+      cta.setAttribute("href", "#plan");
+    } else if (next) {
+      cta.textContent = `Continue — Week ${next.week}`;
+      cta.setAttribute("href", "#arsenal");
+    } else {
+      cta.textContent = "Start your next 12 weeks";
+      cta.setAttribute("href", "#plan");
+    }
   }
 
   /* ================= split list (protocol) ================= */
@@ -195,7 +236,23 @@
     store.set(KEY_EQUIP, [...selectedEquip]);
     card.classList.toggle("is-on");
     card.setAttribute("aria-pressed", card.classList.contains("is-on"));
+    renderEquipNote();
   });
+
+  // Non-blocking heads-up so a full-gym user never gets a silent bodyweight day.
+  function renderEquipNote() {
+    const note = $("#equipNote");
+    const n = selectedEquip.size;
+    if (n === 0) {
+      note.hidden = false;
+      note.classList.add("equipnote--warn");
+      note.textContent = "No equipment selected — this will be a bodyweight-only session. Tap your gear above to include loaded lifts.";
+    } else {
+      note.hidden = false;
+      note.classList.remove("equipnote--warn");
+      note.textContent = `${n} tool${n === 1 ? "" : "s"} selected — the session will use the best variations they allow.`;
+    }
+  }
 
   /* ================= focus chips ================= */
 
@@ -916,9 +973,11 @@
 
   renderSplit();
   renderEquip();
+  renderEquipNote();
   renderWizard();
   renderPlan();
   renderFocus();
+  updateHomeState();
   renderGoals();
   renderJournal();
   renderProgress();
