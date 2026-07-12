@@ -343,7 +343,28 @@
     return `https://www.youtube.com/results?search_query=${encodeURIComponent(name + " exercise form tutorial")}`;
   }
 
-  function makeExercise(chosen, rounds, phase) {
+  // Parse a target rep range from a phase string ("12–15") or a block
+  // scheme ("4 rounds · 8–12 reps · rest 60s").
+  function repRange(str, fromScheme) {
+    const s = String(str || "");
+    const m = fromScheme
+      ? s.match(/(\d+)\s*[–-]\s*(\d+)\s*reps/) || s.match(/(\d+)\s*reps/)
+      : s.match(/(\d+)\s*[–-]\s*(\d+)/) || s.match(/(\d+)/);
+    if (!m) return { lo: 8, hi: 12 };
+    return m[2] ? { lo: +m[1], hi: +m[2] } : { lo: +m[1], hi: +m[1] };
+  }
+
+  // The rep range the app autoregulates against — an applied intensity
+  // technique can override it (e.g. reps-to-failure → 20–30).
+  function effectiveTarget(ex) {
+    if (ex.technique) {
+      const t = INTENSITY.find((i) => i.id === ex.technique);
+      if (t && t.rep) return t.rep;
+    }
+    return ex.baseTarget || { lo: 8, hi: 12 };
+  }
+
+  function makeExercise(chosen, rounds, phase, target) {
     const last = lastEntry(chosen.name);
     return {
       name: chosen.name,
@@ -353,12 +374,34 @@
         : "Bodyweight (add load if you have it)",
       last: last ? fmtLast(last) : null,
       hint: progressionHint(chosen.name, phase),
+      baseTarget: target || { lo: 8, hi: 12 },
+      technique: null,
       sets: Array.from({ length: rounds }, (_, i) => ({
         w: last && last.sets[i] ? last.sets[i].w : "",
         r: last && last.sets[i] ? last.sets[i].r : "",
         done: false,
       })),
     };
+  }
+
+  // Per-set autoregulation: compare logged reps to the target and say what
+  // to change next set to keep every set at the intended effort.
+  function evaluateSet(reps, target, hasTechnique) {
+    const r = +reps;
+    if (!r) return null;
+    const { lo, hi } = target;
+    if (r > hi + 2) {
+      return {
+        kind: "light",
+        msg: hasTechnique
+          ? `${r} reps — still light for the target ${lo}–${hi}. Add another technique, add load, or push reps higher next set.`
+          : `${r} reps beats the target ${lo}–${hi} — that load is light. Tap ⚡ Intensify (slow negatives or single-arm) or add weight so the set actually challenges you.`,
+      };
+    }
+    if (r < lo) {
+      return { kind: "heavy", msg: `${r} reps — short of the ${lo}–${hi} target. Drop ~10%, or take a 15s rest-pause and finish the reps with clean form.` };
+    }
+    return { kind: "good", msg: `${r} reps — right in the ${lo}–${hi} zone. Repeat it, and aim for one more rep next set to progress.` };
   }
 
   function buildSession(reroll = false) {
@@ -392,6 +435,7 @@
           rounds = Math.max(2, Math.round(rounds * phase.setMult));
           if (phase.setAdd && bi === 0) rounds += phase.setAdd;
         }
+        const target = phase ? repRange(phase.reps) : repRange(block.scheme, true);
         return {
           label: block.label,
           scheme: block.scheme,
@@ -402,7 +446,7 @@
               const others = avail.filter((e) => e.name !== prev.blocks[bi].exercises[si].name);
               chosen = others[Math.floor(Math.random() * others.length)] || avail[0];
             }
-            return makeExercise(chosen, rounds, phase);
+            return makeExercise(chosen, rounds, phase, target);
           }),
         };
       }),
@@ -435,15 +479,20 @@
           <span class="block__label">${esc(block.label)}</span>
           <span class="block__scheme">${esc(block.scheme)}${currentSession.phaseReps ? ` · this phase: ${esc(currentSession.phaseReps)} reps @ ${esc(currentSession.phaseRpe)}` : ""}</span>
         </div>
-        ${block.exercises.map((x, si) => `
+        ${block.exercises.map((x, si) => {
+          const tech = x.technique ? INTENSITY.find((i) => i.id === x.technique) : null;
+          const tgt = effectiveTarget(x);
+          return `
           <div class="exercise">
             <h3 class="exercise__name">${esc(x.name)}</h3>
             <div class="exercise__actions">
+              <button type="button" class="chipbtn${tech ? " is-on" : ""}" data-intensify data-b="${bi}" data-s="${si}" title="Make a light load harder">⚡ ${tech ? "Intensity" : "Intensify"}</button>
               <button type="button" class="chipbtn" data-swap data-b="${bi}" data-s="${si}" title="Swap for an equivalent">⇄ Swap</button>
               <a class="chipbtn" href="${videoUrl(x.name)}" target="_blank" rel="noopener" title="Watch a form tutorial">▶ Form</a>
             </div>
-            <p class="exercise__meta">${esc(x.meta)}</p>
+            <p class="exercise__meta">${esc(x.meta)} · target ${tgt.lo}–${tgt.hi} reps</p>
             <p class="exercise__cue">${esc(x.cue)}</p>
+            ${tech ? `<p class="technique">⚡ ${esc(tech.name)} — ${esc(tech.cue)}</p>` : ""}
             ${x.last ? `<p class="exercise__last">${esc(x.last)}</p>` : ""}
             <p class="exercise__cue">${esc(x.hint)}</p>
             <div class="setrows">
@@ -460,7 +509,9 @@
                           aria-label="Mark set ${di + 1} done" aria-pressed="${s.done}"></button>
                 </div>`).join("")}
             </div>
-          </div>`).join("")}
+            <p class="autoreg" data-ar="${bi}-${si}" hidden></p>
+          </div>`;
+        }).join("")}
       </article>`).join("");
 
     $("#session").hidden = false;
@@ -482,18 +533,45 @@
     if (swap) {
       const { b, s } = swap.dataset;
       swapExercise(+b, +s);
+      return;
+    }
+    const intensify = ev.target.closest("[data-intensify]");
+    if (intensify) {
+      const { b, s } = intensify.dataset;
+      cycleIntensity(+b, +s);
     }
   });
+
+  // Cycle: none → technique 1 → … → technique N → none.
+  function cycleIntensity(bi, si) {
+    const ex = currentSession.blocks[bi].exercises[si];
+    const ids = [null, ...INTENSITY.map((t) => t.id)];
+    ex.technique = ids[(ids.indexOf(ex.technique || null) + 1) % ids.length];
+    saveActive();
+    renderSession();
+  }
 
   $("#workoutBlocks").addEventListener("input", (ev) => {
     const el = ev.target;
     if (!el.matches("[data-w],[data-r]")) return;
     const { b, s, d } = el.dataset;
-    const set = currentSession.blocks[b].exercises[s].sets[d];
+    const ex = currentSession.blocks[b].exercises[s];
+    const set = ex.sets[d];
     if (el.hasAttribute("data-w")) set.w = el.value;
-    else set.r = el.value;
+    else { set.r = el.value; updateAutoreg(+b, +s, +d); }
     saveActive();
   });
+
+  function updateAutoreg(bi, si, di) {
+    const ex = currentSession.blocks[bi].exercises[si];
+    const line = document.querySelector(`.autoreg[data-ar="${bi}-${si}"]`);
+    if (!line) return;
+    const res = evaluateSet(ex.sets[di].r, effectiveTarget(ex), !!ex.technique);
+    if (!res) { line.hidden = true; line.textContent = ""; return; }
+    line.hidden = false;
+    line.className = `autoreg autoreg--${res.kind}`;
+    line.textContent = `Set ${di + 1}: ${res.msg}`;
+  }
 
   function swapExercise(bi, si) {
     const day = PROGRAM[currentSession.dayKey];
@@ -506,7 +584,7 @@
     const phase = currentSession.phaseName
       ? PHASES.find((p) => p.name === currentSession.phaseName && currentSession.week >= p.from && currentSession.week <= p.to) || phaseForWeek(currentSession.week)
       : null;
-    currentSession.blocks[bi].exercises[si] = makeExercise(chosen, cur.sets.length, phase);
+    currentSession.blocks[bi].exercises[si] = makeExercise(chosen, cur.sets.length, phase, cur.baseTarget);
     saveActive();
     renderSession();
   }

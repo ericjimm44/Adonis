@@ -369,6 +369,23 @@ const PROGRAM = {
 const DAY_ORDER = ["chestback", "shoulderarms", "legs", "engine"];
 
 /* ============================================================
+   Intensity techniques — make a too-light load hard enough to
+   count. Research is clear: a light weight taken close to
+   failure grows muscle comparably to a heavy one. These change
+   HOW you lift the same load. `rep` optionally overrides the
+   target range the app autoregulates against.
+   ============================================================ */
+const INTENSITY = [
+  { id: "tempo",      name: "Slow negatives",   cue: "Lower under control for a 4-count on every rep. Same weight, double the time under tension." },
+  { id: "unilateral", name: "One side at a time", cue: "Work a single arm or leg per set — the load effectively doubles relative to that limb." },
+  { id: "onehalf",    name: "1.5 reps",         cue: "A full rep, then a half rep from the stretched bottom position — that counts as one." },
+  { id: "partials",   name: "Stretch partials", cue: "After your last full rep, add 5 short partials in the deepest, hardest position." },
+  { id: "restpause",  name: "Rest-pause",       cue: "Take the set to 1 rep shy of failure, rest 15s, squeeze out more — repeat twice.", rep: { lo: 12, hi: 20 } },
+  { id: "highrep",    name: "Reps to failure",  cue: "Push to a high rep count, stopping 1 rep short of failure. Light load, full stimulus.", rep: { lo: 20, hi: 30 } },
+  { id: "shortrest",  name: "Short-rest density", cue: "Cut rest to 20–30s between rounds. Accumulated fatigue makes a light weight feel heavy fast." },
+];
+
+/* ============================================================
    12-week plan templates
    ============================================================ */
 

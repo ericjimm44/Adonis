@@ -402,6 +402,41 @@ em { font-style: italic; color: var(--gold); }
 .exercise__meta { color: var(--sand-dim); font-size: 0.82rem; letter-spacing: 0.06em; grid-column: 1; }
 .exercise__cue { color: var(--sand-dim); font-size: 0.82rem; font-style: italic; font-family: var(--serif); grid-column: 1; }
 
+.chipbtn.is-on { border-color: var(--gold); color: var(--gold); background: rgba(217, 163, 94, 0.1); }
+
+.technique {
+  grid-column: 1 / -1;
+  margin-top: 0.5rem;
+  padding: 0.7rem 1rem;
+  border-left: 2px solid var(--gold);
+  background: rgba(217, 163, 94, 0.08);
+  color: var(--sand);
+  font-size: 0.85rem;
+}
+
+.autoreg {
+  grid-column: 1 / -1;
+  margin-top: 0.7rem;
+  padding-left: 0.8rem;
+  border-left: 2px solid var(--sand-dim);
+  font-size: 0.85rem;
+  color: var(--sand-dim);
+}
+.autoreg--light { border-left-color: var(--ember); color: var(--ember); }
+.autoreg--heavy { border-left-color: var(--gold); color: var(--gold); }
+.autoreg--good  { border-left-color: var(--sand-dim); color: var(--sand); }
+
+.lighttip {
+  margin-top: 1.2rem;
+  max-width: 40rem;
+  color: var(--sand-dim);
+  font-size: 0.85rem;
+  padding: 0.9rem 1.2rem;
+  border: 1px dashed var(--hairline);
+  border-radius: 0.4rem;
+}
+.lighttip strong { color: var(--gold); font-weight: 500; }
+
 .exercise__sets { display: flex; gap: 0.45rem; grid-row: span 3; align-self: center; }
 
 .setdot {
