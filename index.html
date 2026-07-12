@@ -232,6 +232,51 @@
       </div>
       <p class="log__empty reveal" id="progressEmpty">Log a few sets during a session and your strength curve appears here.</p>
 
+      <div class="mirror reveal">
+        <p class="eyebrow" style="margin-top:3.5rem">The mirror · measurements &amp; photos</p>
+        <p class="backup__note">
+          The physique goal is visual — judge it visually. Log a check-in each
+          deload week: same conditions every time (morning, before food, relaxed tape).
+        </p>
+        <form class="meas__form" id="measForm" autocomplete="off">
+          <input type="number" step="any" min="0" id="mWeight" placeholder="Weight" aria-label="Weight" />
+          <input type="number" step="any" min="0" id="mWaist" placeholder="Waist" aria-label="Waist" />
+          <input type="number" step="any" min="0" id="mChest" placeholder="Chest" aria-label="Chest" />
+          <input type="number" step="any" min="0" id="mShoulders" placeholder="Shoulders" aria-label="Shoulders" />
+          <input type="number" step="any" min="0" id="mArm" placeholder="Arm" aria-label="Arm" />
+          <button class="btn btn--ghost btn--sm" type="submit">Log check-in</button>
+        </form>
+
+        <div class="meas__trend" id="measTrend" hidden>
+          <div class="progress__head" style="margin-top:1.8rem">
+            <p class="eyebrow">Trend</p>
+            <select id="measMetric" class="progress__select" aria-label="Choose a measurement"></select>
+          </div>
+          <div class="chart" id="measChart"></div>
+        </div>
+
+        <div class="photos">
+          <div class="photos__head">
+            <p class="eyebrow">Progress photos</p>
+            <button type="button" class="btn btn--ghost btn--sm" id="photoBtn">Add photo</button>
+            <input type="file" id="photoFile" accept="image/*" hidden />
+          </div>
+          <div class="compare" id="photoCompare" hidden>
+            <figure class="compare__side">
+              <img id="compareFirst" alt="First progress photo" />
+              <figcaption id="compareFirstCap"></figcaption>
+            </figure>
+            <figure class="compare__side">
+              <img id="compareLast" alt="Latest progress photo" />
+              <figcaption id="compareLastCap"></figcaption>
+            </figure>
+          </div>
+          <div class="photostrip" id="photoStrip"></div>
+          <p class="log__empty" id="photoEmpty">No photos yet. Day 1 is the photo you'll be gladdest you took.</p>
+          <p class="backup__note" style="margin-top:0.8rem">Photos stay on this device only — they're not part of the JSON backup.</p>
+        </div>
+      </div>
+
       <div class="goals reveal">
         <p class="eyebrow">Goals</p>
         <ul class="goals__list" id="goalsList"></ul>

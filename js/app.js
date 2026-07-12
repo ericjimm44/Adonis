@@ -521,6 +521,16 @@
     requestWake();
   }
 
+  // The rest a block prescribes ("rest 60s", "1 min rest") — default 45s.
+  function schemeRest(scheme) {
+    const s = String(scheme || "");
+    let m = s.match(/rest\s+(\d+)\s*s/i) || s.match(/(\d+)\s*s\s+rest/i);
+    if (m) return +m[1];
+    m = s.match(/(\d+)\s*min\s+rest/i) || s.match(/rest\s+(\d+)\s*min/i);
+    if (m) return +m[1] * 60;
+    return 45;
+  }
+
   $("#workoutBlocks").addEventListener("click", (ev) => {
     const dot = ev.target.closest("[data-dot]");
     if (dot) {
@@ -530,6 +540,8 @@
       dot.classList.toggle("is-done", set.done);
       dot.setAttribute("aria-pressed", set.done);
       saveActive();
+      // completing a set starts the block's prescribed rest automatically
+      if (set.done) startRest(schemeRest(currentSession.blocks[b].scheme));
       return;
     }
     const swap = ev.target.closest("[data-swap]");
@@ -804,7 +816,7 @@
 
   const shortDate = (d) => d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 
-  function lineChartSVG(points, weighted) {
+  function lineChartSVG(points, suffix) {
     const W = 640, H = 200, pL = 46, pR = 56, pT = 16, pB = 30;
     if (!points.length) return "";
     const vs = points.map((p) => p.v);
@@ -828,7 +840,7 @@
 
     const last = points[points.length - 1];
     const lx = x(points.length - 1), ly = y(last.v);
-    const label = weighted ? `${Math.round(last.v)}` : `${Math.round(last.v)} reps`;
+    const label = `${Math.round(last.v * 10) / 10}${suffix || ""}`;
 
     const xlabels = points.length === 1
       ? `<text class="chart__gridlabel" x="${lx.toFixed(1)}" y="${H - 8}" text-anchor="end">${shortDate(last.t)}</text>`
@@ -906,7 +918,7 @@
     $("#progPR").textContent = s.weighted
       ? `Personal best · ≈ ${Math.round(best.v)} estimated 1-rep max (${shortDate(best.t)})`
       : `Personal best · ${Math.round(best.v)} reps in a set (${shortDate(best.t)})`;
-    $("#strengthChart").innerHTML = lineChartSVG(s.points, s.weighted);
+    $("#strengthChart").innerHTML = lineChartSVG(s.points, s.weighted ? "" : " reps");
     $("#volumeChart").innerHTML = barChartSVG(weeklyVolume());
   }
 
@@ -915,9 +927,166 @@
     renderProgress();
   });
 
+  /* ================= the mirror: measurements ================= */
+
+  const KEY_MEAS = "adonis.meas";
+  const MEAS_METRICS = [
+    { id: "weight", label: "Weight" },
+    { id: "waist", label: "Waist" },
+    { id: "chest", label: "Chest" },
+    { id: "shoulders", label: "Shoulders" },
+    { id: "arm", label: "Arm" },
+  ];
+  let measSel = null;
+
+  $("#measForm").addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    const vals = {};
+    let any = false;
+    MEAS_METRICS.forEach((m) => {
+      const el = $("#m" + m.label.replace(/ /g, ""));
+      if (el && el.value !== "") { vals[m.id] = +el.value; any = true; }
+    });
+    if (!any) { alert("Enter at least one measurement to log a check-in."); return; }
+    const meas = store.get(KEY_MEAS, []);
+    meas.push({ date: new Date().toISOString(), vals });
+    store.set(KEY_MEAS, meas);
+    ev.target.reset();
+    renderMeasurements();
+  });
+
+  function renderMeasurements() {
+    const meas = store.get(KEY_MEAS, []);
+    const withData = MEAS_METRICS.filter((m) => meas.some((e) => m.id in e.vals));
+    const wrap = $("#measTrend");
+    if (!withData.length) { wrap.hidden = true; return; }
+    wrap.hidden = false;
+    if (!measSel || !withData.some((m) => m.id === measSel)) measSel = withData[0].id;
+    $("#measMetric").innerHTML = withData.map((m) =>
+      `<option value="${m.id}"${m.id === measSel ? " selected" : ""}>${m.label}</option>`).join("");
+    const points = meas
+      .filter((e) => measSel in e.vals)
+      .map((e) => ({ t: new Date(e.date), v: e.vals[measSel] }));
+    $("#measChart").innerHTML = lineChartSVG(points, "");
+  }
+
+  $("#measMetric").addEventListener("change", (e) => {
+    measSel = e.target.value;
+    renderMeasurements();
+  });
+
+  /* ================= the mirror: progress photos (IndexedDB) ================= */
+
+  const idb = {
+    open() {
+      return new Promise((res, rej) => {
+        const rq = indexedDB.open("adonis", 1);
+        rq.onupgradeneeded = () => rq.result.createObjectStore("photos", { keyPath: "id" });
+        rq.onsuccess = () => res(rq.result);
+        rq.onerror = () => rej(rq.error);
+      });
+    },
+    async put(rec) {
+      const db = await this.open();
+      return new Promise((res, rej) => {
+        const tx = db.transaction("photos", "readwrite");
+        tx.objectStore("photos").put(rec);
+        tx.oncomplete = () => res();
+        tx.onerror = () => rej(tx.error);
+      });
+    },
+    async all() {
+      const db = await this.open();
+      return new Promise((res, rej) => {
+        const rq = db.transaction("photos").objectStore("photos").getAll();
+        rq.onsuccess = () => res(rq.result || []);
+        rq.onerror = () => rej(rq.error);
+      });
+    },
+    async del(id) {
+      const db = await this.open();
+      return new Promise((res, rej) => {
+        const tx = db.transaction("photos", "readwrite");
+        tx.objectStore("photos").delete(id);
+        tx.oncomplete = () => res();
+        tx.onerror = () => rej(tx.error);
+      });
+    },
+  };
+
+  // Downscale to ≤900px JPEG so a year of photos stays a few MB, not hundreds.
+  function compressImage(file) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        const scale = Math.min(1, 900 / Math.max(img.width, img.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(url);
+        canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("compress failed")), "image/jpeg", 0.82);
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("not an image")); };
+      img.src = url;
+    });
+  }
+
+  $("#photoBtn").addEventListener("click", () => $("#photoFile").click());
+
+  $("#photoFile").addEventListener("change", async (ev) => {
+    const file = ev.target.files[0];
+    ev.target.value = "";
+    if (!file) return;
+    try {
+      const blob = await compressImage(file);
+      await idb.put({ id: Date.now(), date: new Date().toISOString(), blob });
+      renderPhotos();
+    } catch {
+      alert("Couldn't read that file as an image.");
+    }
+  });
+
+  $("#photoStrip").addEventListener("click", async (ev) => {
+    const btn = ev.target.closest("[data-photodel]");
+    if (!btn) return;
+    if (!confirm("Delete this progress photo?")) return;
+    await idb.del(+btn.dataset.photodel);
+    renderPhotos();
+  });
+
+  async function renderPhotos() {
+    let photos = [];
+    try { photos = await idb.all(); } catch { /* IDB unavailable — leave empty state */ }
+    photos.sort((a, b) => a.id - b.id);
+    const strip = $("#photoStrip");
+    const compare = $("#photoCompare");
+    $("#photoEmpty").hidden = photos.length > 0;
+
+    strip.innerHTML = photos.map((p) => `
+      <figure>
+        <img src="${URL.createObjectURL(p.blob)}" alt="Progress photo ${shortDate(new Date(p.date))}" loading="lazy" />
+        <button type="button" class="photo__del" data-photodel="${p.id}" aria-label="Delete photo" title="Delete">✕</button>
+        <figcaption>${shortDate(new Date(p.date))}</figcaption>
+      </figure>`).join("");
+
+    if (photos.length >= 2) {
+      const first = photos[0], last = photos[photos.length - 1];
+      compare.hidden = false;
+      $("#compareFirst").src = URL.createObjectURL(first.blob);
+      $("#compareLast").src = URL.createObjectURL(last.blob);
+      const days = Math.round((last.id - first.id) / 86400000);
+      $("#compareFirstCap").textContent = `Day 1 · ${shortDate(new Date(first.date))}`;
+      $("#compareLastCap").textContent = `Now · ${shortDate(new Date(last.date))}${days > 0 ? ` · ${days} days in` : ""}`;
+    } else {
+      compare.hidden = true;
+    }
+  }
+
   /* ================= data backup (export / import) ================= */
 
-  const DATA_KEYS = [KEY_EQUIP, KEY_LOG, KEY_PLAN, KEY_HIST, KEY_GOALS, KEY_ACTIVE, KEY_TECH];
+  const DATA_KEYS = [KEY_EQUIP, KEY_LOG, KEY_PLAN, KEY_HIST, KEY_GOALS, KEY_ACTIVE, KEY_TECH, KEY_MEAS];
 
   $("#exportBtn").addEventListener("click", () => {
     const dump = { app: "ADONIS", version: 1, exportedAt: new Date().toISOString(), data: {} };
@@ -955,8 +1124,9 @@
       currentSession = store.get(KEY_ACTIVE, null);
       techPref = store.get(KEY_TECH, {});
       progSel = null;
+      measSel = null;
       renderPlan(); renderFocus(); renderEquip();
-      renderGoals(); renderJournal(); renderProgress();
+      renderGoals(); renderJournal(); renderProgress(); renderMeasurements();
       if (currentSession) renderSession(); else $("#session").hidden = true;
       alert("Backup imported. Your plan, logs, and goals are restored.");
     };
@@ -1068,5 +1238,7 @@
   renderGoals();
   renderJournal();
   renderProgress();
+  renderMeasurements();
+  renderPhotos();
   if (currentSession) renderSession(); // restore an in-progress session after refresh
 })();
