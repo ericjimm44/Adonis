@@ -579,7 +579,7 @@
             </div>
             <p class="exercise__meta">${esc(x.meta)} · target ${tgt.lo}–${tgt.hi} reps</p>
             <p class="exercise__cue">${esc(x.cue)}</p>
-            ${tech ? `<p class="technique">⚡ ${esc(tech.name)} — ${esc(tech.cue)}<span class="technique__saved">saved for this lift</span></p>` : ""}
+            ${tech ? `<p class="technique">⚡ ${esc(tech.name)} — ${esc(tech.cue)}${x.techRemembered ? `<span class="technique__saved">remembered for this lift</span>` : ""}</p>` : ""}
             ${x.last ? `<p class="exercise__last">${esc(x.last)}</p>` : ""}
             <p class="exercise__cue">${esc(x.hint)}</p>
             <div class="setrows">
@@ -601,11 +601,36 @@
         }).join("")}
       </article>`).join("");
 
+    renderLightAll();
     $("#session").hidden = false;
     updateSetsProgress();
     updateHomeState();
     requestWake();
   }
+
+  // Session-wide intensity: one control makes every move a light-day workout.
+  function renderLightAll() {
+    if (!currentSession) return;
+    const techs = new Set();
+    currentSession.blocks.forEach((b) => b.exercises.forEach((x) => techs.add(x.technique || null)));
+    const shared = techs.size === 1 ? [...techs][0] : "__mixed__";
+    const chips = [{ id: null, label: "Off" }, ...INTENSITY.map((t) => ({ id: t.id, label: t.name }))];
+    $("#lightAllRow").innerHTML = chips.map((c) =>
+      `<button type="button" class="focus__chip${c.id === shared ? " is-on" : ""}" data-lightall="${c.id === null ? "off" : c.id}">${esc(c.label)}</button>`).join("");
+  }
+
+  $("#lightAllRow").addEventListener("click", (ev) => {
+    const chip = ev.target.closest("[data-lightall]");
+    if (!chip || !currentSession) return;
+    const id = chip.dataset.lightall === "off" ? null : chip.dataset.lightall;
+    // apply to the whole session for TODAY (not saved permanently per lift)
+    currentSession.blocks.forEach((b) => b.exercises.forEach((x) => {
+      x.technique = id;
+      x.techRemembered = false;
+    }));
+    saveActive();
+    renderSession();
+  });
 
   // Live "sets done" readout + progress bar in the sticky timer bar.
   function updateSetsProgress() {
