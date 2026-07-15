@@ -369,6 +369,37 @@ const PROGRAM = {
 const DAY_ORDER = ["chestback", "shoulderarms", "legs", "engine"];
 
 /* ============================================================
+   The Blueprint — calculate an ideal, healthy, natural physique
+   for the user's own frame. Anchored on real proportion science:
+   - Golden ("Adonis Index") shoulder:waist ratio ≈ 1.618
+   - Aesthetic waist ≈ 46% of height
+   - FFMI target for realistic natural muscular bodyweight
+     (natural ceiling ~25; 22–23 = very well-built)
+   - Body-fat bands with a hard healthy floor (never below ~7%)
+   These are aesthetic ideals and a planning aid — not medical advice.
+   ============================================================ */
+const GOLDEN_RATIO = 1.618;
+const AESTHETIC_WAIST_RATIO = 0.46; // target waist ÷ height
+
+const AMBITIONS = [
+  { id: "healthy", name: "Lean & Healthy", bf: [12, 15], ffmi: [19, 21],
+    note: "Athletic and sustainable — abs beginning to surface, easy to hold year-round." },
+  { id: "adonis", name: "The Adonis", bf: [9, 12], ffmi: [21, 23],
+    note: "The classic V-taper. Full muscle, visible abs, the Killmonger silhouette — demanding but livable." },
+  { id: "peak", name: "Photo-Ready Peak", bf: [7, 9], ffmi: [22, 24],
+    note: "Stage / photoshoot lean. A short peaking phase, not a lifestyle — don't camp here." },
+];
+
+// Classic Grecian-ideal limb circumferences as multiples of wrist girth.
+const GRECIAN = [
+  { id: "chest", label: "Chest", k: 6.5 },
+  { id: "arm", label: "Arm (flexed)", k: 2.5 },
+  { id: "forearm", label: "Forearm", k: 1.9 },
+  { id: "neck", label: "Neck", k: 2.4 },
+  { id: "calf", label: "Calf", k: 2.35 },
+];
+
+/* ============================================================
    Intensity techniques — make a too-light load hard enough to
    count. Research is clear: a light weight taken close to
    failure grows muscle comparably to a heavy one. These change

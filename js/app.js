@@ -887,6 +887,138 @@
     updateFocusHint();
   }
 
+  /* ================= the blueprint ================= */
+
+  let bpUnit = "imperial";
+  let bpAmbition = "adonis";
+  let lastBlueprint = null;
+
+  const toCm = (v) => bpUnit === "imperial" ? v * 2.54 : v;
+  const toKg = (v) => bpUnit === "imperial" ? v * 0.453592 : v;
+  const lenOut = (cm) => bpUnit === "imperial" ? +(cm / 2.54).toFixed(1) : +cm.toFixed(0);
+  const wtOut = (kg) => bpUnit === "imperial" ? +(kg * 2.20462).toFixed(0) : +kg.toFixed(0);
+  const lenU = () => bpUnit === "imperial" ? "in" : "cm";
+  const wtU = () => bpUnit === "imperial" ? "lb" : "kg";
+
+  function renderBpAmbition() {
+    $("#bpAmbition").innerHTML = AMBITIONS.map((a) =>
+      `<button type="button" class="focus__chip${a.id === bpAmbition ? " is-on" : ""}" data-amb="${a.id}">${esc(a.name)}</button>`).join("");
+    $("#bpAmbitionNote").textContent = AMBITIONS.find((a) => a.id === bpAmbition).note;
+  }
+
+  function syncBpUnitLabels() {
+    const l = bpUnit === "imperial" ? "in" : "cm";
+    $("#uLen").textContent = `(${l})`;
+    $("#uWt").textContent = `(${bpUnit === "imperial" ? "lb" : "kg"})`;
+    $("#uLen2").textContent = `(${l}, optional)`;
+    $("#uLen3").textContent = `(${l}, optional)`;
+  }
+
+  $("#bpForm").querySelector(".bp__units").addEventListener("click", (ev) => {
+    const b = ev.target.closest("[data-unit]");
+    if (!b) return;
+    bpUnit = b.dataset.unit;
+    document.querySelectorAll("#bpForm .bp__units .focus__chip").forEach((c) => c.classList.toggle("is-on", c === b));
+    syncBpUnitLabels();
+  });
+
+  $("#bpAmbition").addEventListener("click", (ev) => {
+    const b = ev.target.closest("[data-amb]");
+    if (!b) return;
+    bpAmbition = b.dataset.amb;
+    renderBpAmbition();
+  });
+
+  $("#bpForm").addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    const heightCm = toCm(+$("#bpHeight").value);
+    const weightKg = toKg(+$("#bpWeight").value);
+    if (!(heightCm > 0) || !(weightKg > 0)) { alert("Enter your height and weight."); return; }
+    const waistIn = +$("#bpWaist").value;
+    const wristIn = +$("#bpWrist").value;
+    const waistCmNow = waistIn > 0 ? toCm(waistIn) : null;
+    const wristCm = wristIn > 0 ? toCm(wristIn) : null;
+
+    const amb = AMBITIONS.find((a) => a.id === bpAmbition);
+    const h2 = (heightCm / 100) ** 2;
+    const bfMid = (amb.bf[0] + amb.bf[1]) / 2 / 100;
+    const wLoKg = amb.ffmi[0] * h2 / (1 - bfMid);
+    const wHiKg = amb.ffmi[1] * h2 / (1 - bfMid);
+    const wMidKg = (wLoKg + wHiKg) / 2;
+
+    const targetWaistCm = AESTHETIC_WAIST_RATIO * heightCm;
+    const targetShoulderCm = targetWaistCm * GOLDEN_RATIO;
+    const limbs = wristCm ? GRECIAN.map((g) => ({ ...g, cm: wristCm * g.k })) : null;
+
+    lastBlueprint = {
+      ambName: amb.name,
+      weightNow: wtOut(weightKg), weightTarget: wtOut(wMidKg), wtUnit: wtU(),
+      waistNow: waistCmNow ? lenOut(waistCmNow) : null, waistTarget: lenOut(targetWaistCm),
+      shoulderTarget: lenOut(targetShoulderCm),
+      armTarget: limbs ? lenOut(limbs.find((l) => l.id === "arm").cm) : null,
+      chestTarget: limbs ? lenOut(limbs.find((l) => l.id === "chest").cm) : null,
+      lenUnit: lenU(),
+    };
+
+    const stat = (num, unit, label, sub) =>
+      `<div class="bp__stat"><span class="bp__statnum">${num}${unit ? `<span style="font-size:0.7em"> ${unit}</span>` : ""}</span>
+        <span class="bp__statlabel">${label}</span>${sub ? `<span class="bp__statsub">${sub}</span>` : ""}</div>`;
+
+    let html = `<p class="bp__headline">Your <em>${esc(amb.name)}</em> blueprint</p>
+      <div class="bp__grid">
+        ${stat(`${amb.bf[0]}–${amb.bf[1]}`, "%", "Target body fat", "healthy & visible")}
+        ${stat(`${wtOut(wLoKg)}–${wtOut(wHiKg)}`, wtU(), "Target weight", `at ~${Math.round(bfMid * 100)}% body fat`)}
+        ${stat(lenOut(targetWaistCm), lenU(), "Target waist", "46% of height")}
+        ${stat(lenOut(targetShoulderCm), lenU(), "Target shoulders", "1.618 × waist")}
+      </div>
+      <p class="bp__ratio">The Adonis Index — shoulders <strong>1.618×</strong> your waist. That golden ratio <em>is</em> the V-taper the eye reads as powerful.</p>`;
+
+    if (limbs) {
+      html += `<div class="bp__limbs"><p class="eyebrow">Classic proportions (from your wrist)</p>
+        <p class="bp__limbrow">${limbs.map((l) => `<span><strong>${lenOut(l.cm)} ${lenU()}</strong> ${esc(l.label)}</span>`).join("")}</p></div>`;
+    }
+
+    html += `<p class="bp__disclaimer">These are aesthetic ideals and a planning aid for a lean, natural, healthy build — not medical advice. The body-fat floor is set for health; going lower isn't better. Frame and genetics vary; treat this as a direction, not a verdict.</p>
+      <button type="button" class="btn btn--primary btn--sm" id="bpSetGoals">Set these as my goals</button>`;
+
+    const res = $("#bpResult");
+    res.innerHTML = html;
+    res.hidden = false;
+    res.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  });
+
+  $("#bpResult").addEventListener("click", (ev) => {
+    if (ev.target.closest("#bpSetGoals")) setBlueprintGoals();
+  });
+
+  function setBlueprintGoals() {
+    const bp = lastBlueprint;
+    if (!bp) return;
+    const meas = store.get(KEY_MEAS, []);
+    const latest = meas.length ? meas[meas.length - 1].vals : {};
+    const goals = getGoals();
+    const added = [];
+    const add = (name, current, target, unit) => {
+      if (current == null || current === "" || isNaN(+current) || !(+target > 0)) return;
+      const g = { name, start: +current, current: +current, target: +target, unit };
+      const i = goals.findIndex((x) => x.name.toLowerCase() === name.toLowerCase());
+      if (i >= 0) goals[i] = g; else goals.push(g);
+      added.push(name);
+    };
+    add("Bodyweight", bp.weightNow, bp.weightTarget, bp.wtUnit);
+    add("Waist", bp.waistNow != null ? bp.waistNow : latest.waist, bp.waistTarget, bp.lenUnit);
+    if (bp.shoulderTarget) add("Shoulders", latest.shoulders, bp.shoulderTarget, bp.lenUnit);
+    if (bp.armTarget) add("Arm", latest.arm, bp.armTarget, bp.lenUnit);
+    if (bp.chestTarget) add("Chest", latest.chest, bp.chestTarget, bp.lenUnit);
+    store.set(KEY_GOALS, goals);
+    renderGoals();
+    const missing = ["Shoulders", "Arm", "Chest"].filter((m) => !added.includes(m) && (m === "Shoulders" || bp[m.toLowerCase() + "Target"]));
+    alert(`Goals set: ${added.join(", ")}.` + (missing.length
+      ? ` Log a ${missing.join(" / ")} measurement in The Mirror and re-run to track those too.`
+      : ""));
+    $("#goalsList").scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
   /* ================= goals ================= */
 
   const getGoals = () => store.get(KEY_GOALS, []);
@@ -1431,6 +1563,8 @@
   renderPlan();
   renderFocus();
   updateHomeState();
+  renderBpAmbition();
+  syncBpUnitLabels();
   renderGoals();
   renderJournal();
   renderProgress();

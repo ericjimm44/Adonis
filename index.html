@@ -311,6 +311,37 @@
         </div>
       </div>
 
+      <div class="blueprint reveal" id="blueprint">
+        <p class="eyebrow" style="margin-top:3.5rem">The Blueprint · your ideal by the numbers</p>
+        <p class="backup__note">
+          Don't guess your targets. Enter your frame and the app calculates a
+          healthy, natural ideal — the golden shoulder-to-waist ratio, a target
+          body-fat range, and a realistic muscular bodyweight for <em>your</em>
+          height. Then set them as trackable goals in one tap.
+        </p>
+
+        <form class="bp__form" id="bpForm" autocomplete="off">
+          <div class="bp__units" role="group" aria-label="Units">
+            <button type="button" class="focus__chip is-on" data-unit="imperial">in / lb</button>
+            <button type="button" class="focus__chip" data-unit="metric">cm / kg</button>
+          </div>
+          <div class="bp__fields">
+            <label>Height <span id="uLen">(in)</span><input type="number" step="any" min="0" id="bpHeight" required /></label>
+            <label>Weight <span id="uWt">(lb)</span><input type="number" step="any" min="0" id="bpWeight" required /></label>
+            <label>Waist <span class="bp__opt" id="uLen2">(in, optional)</span><input type="number" step="any" min="0" id="bpWaist" /></label>
+            <label>Wrist <span class="bp__opt" id="uLen3">(in, optional)</span><input type="number" step="any" min="0" id="bpWrist" /></label>
+          </div>
+          <div class="bp__ambition">
+            <span class="bp__amblabel">Target look</span>
+            <div class="focus__row" id="bpAmbition" role="group" aria-label="Target physique"></div>
+            <p class="focus__hint" id="bpAmbitionNote"></p>
+          </div>
+          <button class="btn btn--primary" type="submit">Calculate my blueprint</button>
+        </form>
+
+        <div class="bp__result" id="bpResult" hidden></div>
+      </div>
+
       <div class="goals reveal">
         <p class="eyebrow">Goals</p>
         <ul class="goals__list" id="goalsList"></ul>
