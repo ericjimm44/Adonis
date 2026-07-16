@@ -51,24 +51,31 @@
         V&#8209;taper back and a fighter's conditioning — built session by
         session, with whatever equipment the day gives you.
       </p>
-      <div class="today reveal reveal--d3" id="todayCard">
-        <div class="today__ring" aria-hidden="false">
-          <svg viewBox="0 0 84 84" role="img" aria-label="Sessions completed this week" id="ringSvg">
-            <circle class="ring__track" cx="42" cy="42" r="36" />
-            <circle class="ring__fill" cx="42" cy="42" r="36" id="ringFill" />
-          </svg>
-          <div class="today__ringcenter">
-            <span class="today__ringnum" id="ringNum">0</span>
-            <span class="today__ringlabel" id="ringLabel">this wk</span>
-          </div>
-        </div>
-        <div class="today__info">
+      <div class="bento reveal reveal--d3" id="todayCard">
+        <div class="bento__main">
           <p class="today__eyebrow" id="todayEyebrow">Today</p>
           <h2 class="today__title" id="todayTitle">—</h2>
           <p class="today__meta" id="todayMeta"></p>
           <p class="today__sub" id="todaySub"></p>
+          <a class="btn btn--dark today__btn" id="todayBtn" href="#arsenal">Start workout</a>
         </div>
-        <a class="btn btn--primary today__btn" id="todayBtn" href="#arsenal">Start workout</a>
+        <div class="bento__cell">
+          <div class="today__ring">
+            <svg viewBox="0 0 84 84" role="img" aria-label="Sessions completed this week" id="ringSvg">
+              <circle class="ring__track" cx="42" cy="42" r="36" />
+              <circle class="ring__fill" cx="42" cy="42" r="36" id="ringFill" />
+            </svg>
+            <div class="today__ringcenter">
+              <span class="today__ringnum" id="ringNum">0</span>
+              <span class="today__ringlabel" id="ringLabel">this wk</span>
+            </div>
+          </div>
+          <span class="bento__celllabel">This week</span>
+        </div>
+        <div class="bento__cell bento__cell--gold">
+          <span class="bento__big" id="streakNum">0</span>
+          <span class="bento__celllabel">week streak</span>
+        </div>
       </div>
       <div class="hero__cta reveal reveal--d3">
         <a class="btn btn--ghost btn--sm" href="#protocol">Read the protocol</a>

@@ -220,8 +220,9 @@
     const cursor = new Date();
     if (!weeks.has(weekId(cursor))) cursor.setDate(cursor.getDate() - 7);
     while (weeks.has(weekId(cursor))) { streak += 1; cursor.setDate(cursor.getDate() - 7); }
+    $("#streakNum").textContent = streak;
     $("#todaySub").textContent = log.length
-      ? `${streak > 0 ? `${streak}-week streak · ` : ""}${log.length} session${log.length === 1 ? "" : "s"} logged`
+      ? `${log.length} session${log.length === 1 ? "" : "s"} logged`
       : "Session one is waiting.";
 
     // state-aware card + CTAs
@@ -1605,7 +1606,12 @@
     });
   }, { threshold: 0.15 });
 
-  document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
+  document.querySelectorAll(".reveal").forEach((el) => {
+    // anything already in the first viewport shows immediately — the fade-up
+    // is for scrolled-to content, never a blocker on first paint
+    if (el.getBoundingClientRect().top < window.innerHeight * 0.9) el.classList.add("is-in");
+    else io.observe(el);
+  });
 
   /* ================= init ================= */
 
