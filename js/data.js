@@ -25,6 +25,86 @@ const EQUIPMENT = [
 /* helper: ex(name, equipNeeded[], cue) */
 const ex = (name, equip, cue) => ({ name, equip, cue });
 
+/* ============================================================
+   Warm-up (dynamic, before) & cool-down (static, after) per day.
+   Dynamic prep raises tissue temperature and primes the exact
+   patterns you're about to load; static holds after — when the
+   muscle is warm — are where flexibility actually improves.
+   mv(name, detail)
+   ============================================================ */
+const mv = (name, detail) => ({ name, detail });
+
+const WARMUP = {
+  chestback: [
+    mv("Arm circles + swings", "20 forward, 20 back, then big cross-body swings — open the shoulders."),
+    mv("Band / towel pull-aparts", "2 × 15. Wake up the upper back before you press and pull."),
+    mv("Scapular push-ups", "2 × 10. Just the shoulder blades — no elbow bend."),
+    mv("Cat–cow", "8 slow rounds. Mobilize the spine through flexion and extension."),
+    mv("Light warm-up set", "1st exercise, ~50% load, 12 easy reps. Grease the exact pattern."),
+  ],
+  shoulderarms: [
+    mv("Arm circles", "20 each direction, small to large."),
+    mv("Band pull-aparts + face pulls", "2 × 15 each. Rear delts and cuff, primed."),
+    mv("Shoulder dislocates (band/towel)", "2 × 10. Take the shoulders through full range, slowly."),
+    mv("Wrist circles + flexor stretch", "30s — the curls and presses will thank you."),
+    mv("Light warm-up set", "1st press, ~50% load, 12 easy reps."),
+  ],
+  legs: [
+    mv("Leg swings", "15 front-to-back and side-to-side, each leg. Loosen the hips."),
+    mv("Bodyweight squats", "2 × 15, slow — sit deep and open the knees."),
+    mv("Walking lunges", "10 each leg. Wake the glutes and quads."),
+    mv("Ankle rocks + calf raises", "15 each. Ankles decide your squat depth."),
+    mv("Hip circles / 90-90 rotations", "8 each side. Free the hips before you load them."),
+  ],
+  engine: [
+    mv("Jog / skip in place", "60s, building pace. Get the heart rate climbing."),
+    mv("Arm circles + torso twists", "30s each. Loosen shoulders and spine for punches."),
+    mv("Leg swings + high knees", "30s. Open the hips, prime the stride."),
+    mv("Shadowbox — light", "60s. Rehearse the movement before you go hard."),
+  ],
+  fullbody: [
+    mv("Jumping jacks / jog in place", "60s. Raise the core temperature."),
+    mv("Arm circles + band pull-aparts", "2 × 15. Shoulders and upper back."),
+    mv("Bodyweight squats + leg swings", "2 × 12 squats, 10 swings each leg. Prime the hips."),
+    mv("Cat–cow + world's greatest stretch", "5 each — full-body mobility in two moves."),
+    mv("Light warm-up set", "1st compound, ~50% load, 12 easy reps."),
+  ],
+};
+
+const COOLDOWN = {
+  chestback: [
+    mv("Doorway chest stretch", "30s each side. Open the pecs the pressing just tightened."),
+    mv("Cross-body shoulder stretch", "30s each arm."),
+    mv("Child's pose + lat reach", "45s. Lengthen the lats and decompress the spine."),
+    mv("Standing forward fold", "45s. Let the back and hamstrings release."),
+  ],
+  shoulderarms: [
+    mv("Cross-body + overhead triceps stretch", "30s each arm."),
+    mv("Doorway chest / front-delt stretch", "30s each side."),
+    mv("Wrist flexor & extensor stretch", "30s each — arms did a lot of gripping."),
+    mv("Neck side stretch", "30s each side. Release the traps."),
+  ],
+  legs: [
+    mv("Standing quad stretch", "30s each leg."),
+    mv("Seated / standing hamstring stretch", "45s each leg."),
+    mv("Figure-4 glute stretch", "30s each side."),
+    mv("Calf stretch on a wall", "30s each leg."),
+    mv("Couch / hip-flexor stretch", "30s each side. Undo all the sitting and squatting."),
+  ],
+  engine: [
+    mv("Walk it out", "2–3 min. Bring the heart rate down gradually."),
+    mv("Standing quad + hamstring stretch", "30s each leg."),
+    mv("Child's pose", "60s. Slow the breath, settle the core."),
+    mv("Chest + shoulder opener", "30s each side."),
+  ],
+  fullbody: [
+    mv("Standing forward fold", "45s. Hamstrings and back."),
+    mv("Quad + hip-flexor stretch", "30s each side."),
+    mv("Doorway chest stretch", "30s each side."),
+    mv("Child's pose + lat reach", "45s. Full-body decompression."),
+  ],
+};
+
 const PROGRAM = {
   chestback: {
     title: "Warrior Chest & Back",

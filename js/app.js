@@ -601,12 +601,66 @@
         }).join("")}
       </article>`).join("");
 
+    renderMobility();
     renderLightAll();
     $("#session").hidden = false;
     updateSetsProgress();
     updateHomeState();
     requestWake();
   }
+
+  // Warm-up (dynamic, before) and cool-down (static, after), day-specific.
+  function renderMobility() {
+    if (!currentSession) return;
+    const key = currentSession.dayKey;
+    const warm = WARMUP[key] || WARMUP.fullbody;
+    const cool = COOLDOWN[key] || COOLDOWN.fullbody;
+    currentSession.warmDone = currentSession.warmDone || Array(warm.length).fill(false);
+    currentSession.coolDone = currentSession.coolDone || Array(cool.length).fill(false);
+
+    const list = (moves, done, kind) => moves.map((m, i) => `
+      <li class="mob__item">
+        <button type="button" class="setdot${done[i] ? " is-done" : ""}" data-mob="${kind}" data-i="${i}"
+                aria-label="Mark ${esc(m.name)} done" aria-pressed="${done[i]}"></button>
+        <div><span class="mob__name">${esc(m.name)}</span><span class="mob__detail">${esc(m.detail)}</span></div>
+      </li>`).join("");
+
+    $("#warmup").innerHTML = `
+      <details class="mob mob--warm" open>
+        <summary><span class="mob__tag">Warm-up</span> Prime the movement — dynamic, ~5 min <span class="mob__count" id="warmCount"></span></summary>
+        <ul class="mob__list">${list(warm, currentSession.warmDone, "warm")}</ul>
+      </details>`;
+    $("#cooldown").innerHTML = `
+      <details class="mob mob--cool">
+        <summary><span class="mob__tag">Cool-down</span> Stretch while warm — static holds, ~5 min <span class="mob__count" id="coolCount"></span></summary>
+        <ul class="mob__list">${list(cool, currentSession.coolDone, "cool")}</ul>
+      </details>`;
+    updateMobCounts();
+  }
+
+  function updateMobCounts() {
+    if (!currentSession) return;
+    const w = currentSession.warmDone || [], c = currentSession.coolDone || [];
+    const wc = $("#warmCount"), cc = $("#coolCount");
+    if (wc) wc.textContent = `${w.filter(Boolean).length}/${w.length}`;
+    if (cc) cc.textContent = `${c.filter(Boolean).length}/${c.length}`;
+  }
+
+  function bindMob(id) {
+    $(id).addEventListener("click", (ev) => {
+      const dot = ev.target.closest("[data-mob]");
+      if (!dot || !currentSession) return;
+      const arr = dot.dataset.mob === "warm" ? currentSession.warmDone : currentSession.coolDone;
+      const i = +dot.dataset.i;
+      arr[i] = !arr[i];
+      dot.classList.toggle("is-done", arr[i]);
+      dot.setAttribute("aria-pressed", arr[i]);
+      saveActive();
+      updateMobCounts();
+    });
+  }
+  bindMob("#warmup");
+  bindMob("#cooldown");
 
   // Session-wide intensity: one control makes every move a light-day workout.
   function renderLightAll() {
