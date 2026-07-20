@@ -39,6 +39,7 @@
   const KEY_ACTIVE = "adonis.active";
   const KEY_TECH = "adonis.tech";
   const KEY_TAB = "adonis.tab";
+  const KEY_NOTES = "adonis.notes";
 
   let selectedEquip = new Set(store.get(KEY_EQUIP, []));
   let techPref = store.get(KEY_TECH, {}); // { exerciseName: techniqueId } — remembered per lift
@@ -921,6 +922,7 @@
   /* ================= rest timer ================= */
 
   let timerId = null;
+  const PREST_C = 188.5; // player rest ring circumference
 
   function startRest(secs) {
     clearInterval(timerId);
@@ -929,6 +931,11 @@
     let left = secs;
     const paint = () => {
       clock.textContent = `${String(Math.floor(left / 60)).padStart(2, "0")}:${String(left % 60).padStart(2, "0")}`;
+      // mirror into the focus player's countdown ring when it's open
+      if (!$("#player").hidden) {
+        $("#pRestNum").textContent = left;
+        $("#pRestRing").style.strokeDashoffset = (PREST_C * (1 - left / secs)).toFixed(1);
+      }
     };
     paint();
     timerId = setInterval(() => {
@@ -936,6 +943,10 @@
       if (left <= 0) {
         clearInterval(timerId);
         clock.textContent = "GO.";
+        if (!$("#player").hidden) {
+          $("#pRestNum").textContent = "GO";
+          $("#pRestRing").style.strokeDashoffset = "0";
+        }
         setTimeout(() => { clock.hidden = true; }, 2500);
         return;
       }
@@ -945,6 +956,118 @@
 
   $("#restBtn").addEventListener("click", (e) => startRest(+e.currentTarget.dataset.secs));
   $("#restBtnLong").addEventListener("click", (e) => startRest(+e.currentTarget.dataset.secs));
+
+  /* ================= focus player ================= */
+
+  let playerIdx = 0;
+
+  const exFlat = () => {
+    const out = [];
+    if (!currentSession) return out;
+    currentSession.blocks.forEach((b, bi) =>
+      b.exercises.forEach((x, si) => out.push({ bi, si, x, block: b })));
+    return out;
+  };
+
+  function openPlayer() {
+    const flat = exFlat();
+    if (!flat.length) return;
+    // start at the first exercise with work left
+    let i = flat.findIndex((e) => e.x.sets.some((s) => !s.done));
+    if (i < 0) i = flat.length - 1;
+    playerIdx = i;
+    $("#player").hidden = false;
+    $("#pRestNum").textContent = "—";
+    $("#pRestRing").style.strokeDashoffset = PREST_C;
+    renderPlayer();
+  }
+
+  function closePlayer() {
+    $("#player").hidden = true;
+    renderSession(); // sync list view with everything logged in the player
+  }
+
+  function renderPlayer() {
+    const flat = exFlat();
+    if (!flat.length) { closePlayer(); return; }
+    playerIdx = Math.max(0, Math.min(playerIdx, flat.length - 1));
+    const { x, block } = flat[playerIdx];
+    const tgt = effectiveTarget(x);
+    const doneSets = x.sets.filter((s) => s.done).length;
+    const cur = x.sets.findIndex((s) => !s.done);
+    const curIdx = cur < 0 ? x.sets.length - 1 : cur;
+
+    $("#pCount").textContent = `${playerIdx + 1} / ${flat.length}`;
+    $("#pBlock").textContent = block.label;
+    $("#pMeta").textContent = `${x.meta} · target ${tgt.lo}–${tgt.hi} reps`;
+    $("#pName").textContent = x.name;
+    $("#pCue").textContent = x.cue;
+    $("#pSet").textContent = `${Math.min(doneSets + 1, x.sets.length)}/${x.sets.length}`;
+    $("#pHint").textContent = x.hint;
+    $("#pForm").href = videoUrl(x.name);
+
+    const tech = x.technique ? INTENSITY.find((t) => t.id === x.technique) : null;
+    const techEl = $("#pTech");
+    techEl.hidden = !tech;
+    if (tech) techEl.textContent = `⚡ ${tech.name} — ${tech.cue}`;
+
+    const set = x.sets[curIdx];
+    $("#pW").value = set ? set.w : "";
+    $("#pR").value = set ? set.r : "";
+    $("#pAutoreg").hidden = true;
+
+    const nxt = flat[playerIdx + 1];
+    $("#pNext").innerHTML = nxt
+      ? `<strong>Up next</strong>${esc(nxt.x.name)} · ${nxt.x.sets.length} sets`
+      : `<strong>Up next</strong>Cool-down, then complete the session`;
+
+    // last exercise fully logged → the main button becomes "finish"
+    const allDone = flat.every((e) => e.x.sets.every((s) => s.done));
+    $("#pDone").textContent = allDone ? "🏁" : "✓";
+    $("#pDone").setAttribute("aria-label", allDone ? "Complete session" : "Log this set");
+  }
+
+  $("#playerBtn").addEventListener("click", openPlayer);
+  $("#pClose").addEventListener("click", closePlayer);
+  $("#pPrev").addEventListener("click", () => { playerIdx -= 1; renderPlayer(); });
+  $("#pNextBtn").addEventListener("click", () => { playerIdx += 1; renderPlayer(); });
+
+  $("#pSwap").addEventListener("click", () => {
+    const flat = exFlat();
+    const { bi, si } = flat[playerIdx];
+    swapExercise(bi, si); // re-renders the list view
+    renderPlayer();
+  });
+
+  $("#pDone").addEventListener("click", () => {
+    const flat = exFlat();
+    const allDoneBefore = flat.every((e) => e.x.sets.every((s) => s.done));
+    if (allDoneBefore) { closePlayer(); $("#finishBtn").click(); return; }
+
+    const { x, block } = flat[playerIdx];
+    const cur = x.sets.findIndex((s) => !s.done);
+    if (cur < 0) { playerIdx += 1; renderPlayer(); return; }
+    const set = x.sets[cur];
+    set.w = $("#pW").value;
+    set.r = $("#pR").value;
+    set.done = true;
+    saveActive();
+    updateSetsProgress();
+
+    startRest(schemeRest(block.scheme));
+    const advance = cur + 1 >= x.sets.length && playerIdx < flat.length - 1;
+    if (advance) playerIdx += 1;
+    renderPlayer();
+
+    // live coaching on the logged set (only while still on that exercise)
+    const res = evaluateSet(set.r, effectiveTarget(x), !!x.technique);
+    if (res && !advance) {
+      const ar = $("#pAutoreg");
+      ar.hidden = false;
+      ar.className = `autoreg autoreg--${res.kind}`;
+      ar.textContent = `Set ${cur + 1}: ${res.msg}`;
+    }
+  });
 
   /* ================= finishing ================= */
 
@@ -1583,7 +1706,7 @@
 
   /* ================= data backup (export / import) ================= */
 
-  const DATA_KEYS = [KEY_EQUIP, KEY_LOG, KEY_PLAN, KEY_HIST, KEY_GOALS, KEY_ACTIVE, KEY_TECH, KEY_MEAS];
+  const DATA_KEYS = [KEY_EQUIP, KEY_LOG, KEY_PLAN, KEY_HIST, KEY_GOALS, KEY_ACTIVE, KEY_TECH, KEY_MEAS, KEY_NOTES];
 
   $("#exportBtn").addEventListener("click", () => {
     const dump = { app: "ADONIS", version: 1, exportedAt: new Date().toISOString(), data: {} };
@@ -1630,6 +1753,61 @@
     };
     reader.readAsText(file);
     ev.target.value = ""; // allow re-importing the same file later
+  });
+
+  /* ================= notebook ================= */
+
+  const NOTE_TYPES = [
+    { id: "daily", label: "Daily" },
+    { id: "milestone", label: "Milestone" },
+    { id: "earned", label: "Earned today" },
+  ];
+  let noteType = "daily";
+
+  function renderNoteTypes() {
+    $("#noteTypes").innerHTML = NOTE_TYPES.map((t) =>
+      `<button type="button" class="focus__chip${t.id === noteType ? " is-on" : ""}" data-ntype="${t.id}">${t.label}</button>`).join("");
+  }
+
+  $("#noteTypes").addEventListener("click", (ev) => {
+    const b = ev.target.closest("[data-ntype]");
+    if (!b) return;
+    noteType = b.dataset.ntype;
+    renderNoteTypes();
+  });
+
+  $("#noteForm").addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    const text = $("#noteText").value.trim();
+    if (!text) return;
+    const notes = store.get(KEY_NOTES, []);
+    notes.push({ date: new Date().toISOString(), type: noteType, text });
+    store.set(KEY_NOTES, notes);
+    $("#noteText").value = "";
+    renderNotes();
+  });
+
+  function renderNotes() {
+    const notes = store.get(KEY_NOTES, []);
+    $("#notesList").innerHTML = notes.map((n, i) => ({ n, i })).reverse().slice(0, 10).map(({ n, i }) => {
+      const t = NOTE_TYPES.find((x) => x.id === n.type) || NOTE_TYPES[0];
+      const when = new Date(n.date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+      return `<li>
+        <button type="button" class="goal__del" data-notedel="${i}" aria-label="Delete entry" title="Delete">✕</button>
+        <p class="notes__meta"><span class="notes__type">${esc(t.label)}</span><span>${when}</span></p>
+        <p class="notes__text">${esc(n.text)}</p>
+      </li>`;
+    }).join("");
+  }
+
+  $("#notesList").addEventListener("click", (ev) => {
+    const btn = ev.target.closest("[data-notedel]");
+    if (!btn) return;
+    if (!confirm("Delete this entry?")) return;
+    const notes = store.get(KEY_NOTES, []);
+    notes.splice(+btn.dataset.notedel, 1);
+    store.set(KEY_NOTES, notes);
+    renderNotes();
   });
 
   /* ================= journal ================= */
@@ -1797,6 +1975,8 @@
   renderProgress();
   renderMeasurements();
   renderPhotos();
+  renderNoteTypes();
+  renderNotes();
   if (currentSession) renderSession(); // restore an in-progress session after refresh
   showTab(store.get(KEY_TAB, "today"));
 })();

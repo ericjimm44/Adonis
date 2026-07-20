@@ -238,6 +238,7 @@
       </div>
 
       <div class="timerbar" id="timerBar">
+        <button class="btn btn--primary btn--sm" id="playerBtn">▶ Player</button>
         <button class="btn btn--ghost btn--sm" id="restBtn" data-secs="45">Rest 45s</button>
         <button class="btn btn--ghost btn--sm" id="restBtnLong" data-secs="90">Rest 90s</button>
         <span class="timerbar__clock" id="restClock" hidden>00:45</span>
@@ -285,6 +286,17 @@
         <div class="chart" id="volumeChart"></div>
       </div>
       <p class="log__empty reveal" id="progressEmpty">Log a few sets during a session and your strength curve appears here.</p>
+
+      <div class="notebook reveal">
+        <p class="eyebrow" style="margin-top:3.5rem">Notebook</p>
+        <p class="backup__note">How did it feel? What did you earn today? A line is enough.</p>
+        <form class="notebook__form" id="noteForm" autocomplete="off">
+          <div class="focus__row" id="noteTypes" role="group" aria-label="Entry type"></div>
+          <textarea id="noteText" rows="3" maxlength="600" placeholder="Write it down — the statue remembers." required></textarea>
+          <button class="btn btn--ghost btn--sm" type="submit">Save entry</button>
+        </form>
+        <ul class="notes" id="notesList"></ul>
+      </div>
 
       <div class="mirror reveal">
         <p class="eyebrow" style="margin-top:3.5rem">The mirror · measurements &amp; photos</p>
@@ -401,6 +413,52 @@
     </footer>
 
   </main>
+
+  <!-- focus player (one exercise at a time) -->
+  <div class="player" id="player" hidden>
+    <div class="player__top">
+      <button type="button" class="player__close" id="pClose" aria-label="Close player">✕</button>
+      <span class="player__count" id="pCount"></span>
+      <span class="player__blocklabel" id="pBlock"></span>
+    </div>
+    <div class="player__body">
+      <p class="eyebrow" id="pMeta"></p>
+      <h2 class="player__name" id="pName"></h2>
+      <p class="player__cue" id="pCue"></p>
+      <p class="technique" id="pTech" hidden></p>
+      <div class="player__tiles">
+        <div class="ptile">
+          <div class="prest">
+            <svg viewBox="0 0 72 72" aria-hidden="true">
+              <circle class="prest__track" cx="36" cy="36" r="30" />
+              <circle class="prest__fill" id="pRestRing" cx="36" cy="36" r="30" />
+            </svg>
+            <span class="prest__num" id="pRestNum">—</span>
+          </div>
+          <small>rest</small>
+        </div>
+        <div class="ptile ptile--set">
+          <strong id="pSet">—</strong>
+          <small>set</small>
+        </div>
+      </div>
+      <div class="player__log">
+        <input type="number" id="pW" placeholder="weight" inputmode="decimal" min="0" step="0.5" aria-label="Weight" />
+        <span class="setrow__x">×</span>
+        <input type="number" id="pR" placeholder="reps" inputmode="numeric" min="0" step="1" aria-label="Reps" />
+      </div>
+      <p class="autoreg" id="pAutoreg" hidden></p>
+      <p class="player__hint" id="pHint"></p>
+    </div>
+    <div class="player__next" id="pNext"></div>
+    <div class="player__controls">
+      <a class="pctrl" id="pForm" target="_blank" rel="noopener" title="Watch a form tutorial"><span>▶</span>Form</a>
+      <button type="button" class="pctrl" id="pPrev"><span>‹</span>Prev</button>
+      <button type="button" class="pctrl pctrl--main" id="pDone" aria-label="Log this set">✓</button>
+      <button type="button" class="pctrl" id="pNextBtn"><span>›</span>Next</button>
+      <button type="button" class="pctrl" id="pSwap"><span>⇄</span>Swap</button>
+    </div>
+  </div>
 
   <!-- customize-program bottom sheet -->
   <div class="sheet" id="sheet" hidden>
