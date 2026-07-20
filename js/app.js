@@ -126,7 +126,97 @@
     renderFocus();
   });
 
+  /* ================= customize-program sheet ================= */
+
+  let sheetDays = 4, sheetTime = 60;
+
+  function renderSheet() {
+    $("#sheetDays").innerHTML = [2, 3, 4, 5, 6].map((d) =>
+      `<button type="button" class="focus__chip${d === sheetDays ? " is-on" : ""}" data-sdays="${d}">${d} days</button>`).join("");
+    $("#sheetTime").innerHTML = TIME_OPTIONS.map((t) =>
+      `<button type="button" class="focus__chip${t.mins === sheetTime ? " is-on" : ""}" data-stime="${t.mins}">${t.label}</button>`).join("");
+  }
+
+  $("#customizeBtn").addEventListener("click", () => {
+    const plan = getPlan();
+    if (!plan) return;
+    sheetDays = plan.days;
+    sheetTime = plan.mins;
+    renderSheet();
+    $("#sheet").hidden = false;
+  });
+
+  $("#sheet").addEventListener("click", (ev) => {
+    if (ev.target.closest("[data-sheetclose]")) { $("#sheet").hidden = true; return; }
+    const d = ev.target.closest("[data-sdays]");
+    if (d) { sheetDays = +d.dataset.sdays; renderSheet(); return; }
+    const t = ev.target.closest("[data-stime]");
+    if (t) { sheetTime = +t.dataset.stime; renderSheet(); }
+  });
+
+  // Reshape the plan in place: new split/time, completed work carried over
+  // week by week (each week keeps as many done sessions as it had).
+  $("#sheetSave").addEventListener("click", () => {
+    const plan = getPlan();
+    if (!plan) return;
+    const layout = SPLITS[sheetDays];
+    const sessions = [];
+    for (let w = 1; w <= 12; w++) {
+      const oldDone = plan.sessions.filter((s) => s.week === w && s.done);
+      layout.forEach((dayKey, i) => {
+        const done = i < oldDone.length;
+        const rec = { week: w, slot: i, dayKey, done };
+        if (done && oldDone[i].doneAt) rec.doneAt = oldDone[i].doneAt;
+        sessions.push(rec);
+      });
+    }
+    store.set(KEY_PLAN, { ...plan, days: sheetDays, mins: sheetTime, sessions });
+    sessTime = sheetTime;
+    $("#sheet").hidden = true;
+    renderPlan();
+    renderTimeToday();
+    renderFocus();
+    updateHomeState();
+  });
+
   /* ================= plan overview ================= */
+
+  // how N weekly sessions sit across a 7-day week (1 = train, 0 = rest)
+  const LAYOUT7 = {
+    2: [1, 0, 0, 1, 0, 0, 0],
+    3: [1, 0, 1, 0, 1, 0, 0],
+    4: [1, 1, 0, 1, 1, 0, 0],
+    5: [1, 1, 0, 1, 1, 1, 0],
+    6: [1, 1, 1, 0, 1, 1, 1],
+  };
+
+  function weekRowsHTML(plan, week, nextIdx) {
+    const weekSess = plan.sessions.filter((s) => s.week === week);
+    const pattern = LAYOUT7[plan.days] || weekSess.map(() => 1);
+    let si = 0;
+    return pattern.map((isTrain, di) => {
+      if (!isTrain || si >= weekSess.length) {
+        return `<div class="dayrow dayrow--rest">
+          <span class="dayrow__num">${di + 1}<small>day</small></span>
+          <span class="dayrow__title">Rest day</span>
+          <span class="dayrow__meta">recover &amp; grow</span>
+          <span class="dayrow__mark">☾</span>
+        </div>`;
+      }
+      const s = weekSess[si++];
+      const isNow = plan.sessions.indexOf(s) === nextIdx;
+      const cls = s.done ? " dayrow--done" : (isNow ? " dayrow--now" : "");
+      const mark = s.done ? "✓" : (isNow ? "›" : "");
+      const row = `
+        <span class="dayrow__num">${di + 1}<small>day</small></span>
+        <span class="dayrow__title">${esc(PROGRAM[s.dayKey].title)}</span>
+        <span class="dayrow__meta">~${plan.mins} min</span>
+        <span class="dayrow__mark">${mark}</span>`;
+      return isNow
+        ? `<a class="dayrow${cls}" href="#arsenal" aria-label="Start ${esc(PROGRAM[s.dayKey].title)}">${row}</a>`
+        : `<div class="dayrow${cls}">${row}</div>`;
+    }).join("");
+  }
 
   function renderPlan() {
     const plan = getPlan();
@@ -165,21 +255,19 @@
 
     $("#phaseNote").textContent = `${phase.name} — ${phase.note}`;
 
-    // Alive-style week view: this week's sessions as day rows
-    const weekSess = plan.sessions.filter((s) => s.week === curWeek);
+    // Alive-style week view: 7 day rows with rest days interleaved
     const nextIdx = next ? plan.sessions.indexOf(next) : -1;
-    $("#weekView").innerHTML = weekSess.map((s) => {
-      const isNow = plan.sessions.indexOf(s) === nextIdx;
-      const cls = s.done ? " dayrow--done" : (isNow ? " dayrow--now" : "");
-      const mark = s.done ? "✓" : (isNow ? "›" : "");
-      const row = `
-        <span class="dayrow__num">${s.slot + 1}<small>day</small></span>
-        <span class="dayrow__title">${esc(PROGRAM[s.dayKey].title)}</span>
-        <span class="dayrow__meta">~${plan.mins} min</span>
-        <span class="dayrow__mark">${mark}</span>`;
-      return isNow
-        ? `<a class="dayrow${cls}" href="#arsenal" aria-label="Start ${esc(PROGRAM[s.dayKey].title)}">${row}</a>`
-        : `<div class="dayrow${cls}">${row}</div>`;
+    $("#weekView").innerHTML = weekRowsHTML(plan, curWeek, nextIdx);
+
+    // full 12-week schedule accordion (current week open)
+    $("#schedList").innerHTML = Array.from({ length: 12 }, (_, i) => {
+      const w = i + 1;
+      const ph = phaseForWeek(w);
+      const allDone = plan.sessions.filter((s) => s.week === w).every((s) => s.done);
+      return `<details class="schedweek"${w === curWeek && next ? " open" : ""}>
+        <summary>Week ${w} <span class="schedweek__phase">${esc(ph.name)}</span>${allDone ? `<span class="schedweek__done">✓ complete</span>` : ""}</summary>
+        <div class="weekview">${weekRowsHTML(plan, w, nextIdx)}</div>
+      </details>`;
     }).join("");
 
     // hub: Week N of 12 circle + circular stat trio

@@ -162,6 +162,10 @@
         <div class="hub" id="planHub"></div>
         <div class="weeks" id="weeksGrid"></div>
         <p class="focus__hint" id="phaseNote"></p>
+        <details class="fold" id="schedFold">
+          <summary>Full program schedule — all 12 weeks</summary>
+          <div class="sched" id="schedList"></div>
+        </details>
         <p class="jargon">
           <strong>New to this?</strong> <em>RPE</em> is just how hard a set feels:
           "RPE 8" means you stop with about 2 solid reps still in you. Start each
@@ -170,7 +174,10 @@
         </p>
         <div class="build-cta">
           <a class="btn btn--primary" href="#arsenal" id="planNextBtn">Set up today's session</a>
-          <button class="btn btn--ghost btn--sm" id="resetPlanBtn">Restart plan</button>
+        </div>
+        <div class="linkrows">
+          <button type="button" class="linkrow" id="customizeBtn">Customize program <span>›</span></button>
+          <button type="button" class="linkrow" id="resetPlanBtn">Restart plan <span>›</span></button>
         </div>
       </div>
     </section>
@@ -394,6 +401,24 @@
     </footer>
 
   </main>
+
+  <!-- customize-program bottom sheet -->
+  <div class="sheet" id="sheet" hidden>
+    <div class="sheet__backdrop" data-sheetclose></div>
+    <div class="sheet__panel" role="dialog" aria-modal="true" aria-label="Customize your program">
+      <span class="sheet__handle" aria-hidden="true"></span>
+      <button type="button" class="sheet__close" data-sheetclose>Close</button>
+      <h3 class="sheet__title">Customize your <em>program</em></h3>
+      <p class="sheet__note">Change anytime through the campaign — every session you've completed is kept.</p>
+      <p class="eyebrow">Workouts per week</p>
+      <div class="focus__row" id="sheetDays" role="group" aria-label="Workouts per week"></div>
+      <p class="eyebrow" style="margin-top:1.4rem">Time per session</p>
+      <div class="focus__row" id="sheetTime" role="group" aria-label="Time per session"></div>
+      <div class="build-cta" style="margin-top:1.8rem">
+        <button type="button" class="btn btn--primary" id="sheetSave">Save changes</button>
+      </div>
+    </div>
+  </div>
 
   <nav class="tabbar" aria-label="App sections">
     <button type="button" class="tabbar__tab is-active" data-tab="today" aria-label="Today">
