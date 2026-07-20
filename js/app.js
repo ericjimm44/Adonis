@@ -38,6 +38,7 @@
   const KEY_GOALS = "adonis.goals";
   const KEY_ACTIVE = "adonis.active";
   const KEY_TECH = "adonis.tech";
+  const KEY_TAB = "adonis.tab";
 
   let selectedEquip = new Set(store.get(KEY_EQUIP, []));
   let techPref = store.get(KEY_TECH, {}); // { exerciseName: techniqueId } — remembered per lift
@@ -164,6 +165,39 @@
 
     $("#phaseNote").textContent = `${phase.name} — ${phase.note}`;
 
+    // Alive-style week view: this week's sessions as day rows
+    const weekSess = plan.sessions.filter((s) => s.week === curWeek);
+    const nextIdx = next ? plan.sessions.indexOf(next) : -1;
+    $("#weekView").innerHTML = weekSess.map((s) => {
+      const isNow = plan.sessions.indexOf(s) === nextIdx;
+      const cls = s.done ? " dayrow--done" : (isNow ? " dayrow--now" : "");
+      const mark = s.done ? "✓" : (isNow ? "›" : "");
+      const row = `
+        <span class="dayrow__num">${s.slot + 1}<small>day</small></span>
+        <span class="dayrow__title">${esc(PROGRAM[s.dayKey].title)}</span>
+        <span class="dayrow__meta">~${plan.mins} min</span>
+        <span class="dayrow__mark">${mark}</span>`;
+      return isNow
+        ? `<a class="dayrow${cls}" href="#arsenal" aria-label="Start ${esc(PROGRAM[s.dayKey].title)}">${row}</a>`
+        : `<div class="dayrow${cls}">${row}</div>`;
+    }).join("");
+
+    // hub: Week N of 12 circle + circular stat trio
+    const doneCount = plan.sessions.filter((s) => s.done).length;
+    const log2 = store.get(KEY_LOG, []);
+    const thisWeek = log2.filter((l) => weekId(l.date) === weekId(new Date())).length;
+    const weeksSet = new Set(log2.map((l) => weekId(l.date)));
+    let stk = 0; const cur2 = new Date();
+    if (!weeksSet.has(weekId(cur2))) cur2.setDate(cur2.getDate() - 7);
+    while (weeksSet.has(weekId(cur2))) { stk += 1; cur2.setDate(cur2.getDate() - 7); }
+    $("#planHub").innerHTML = `
+      <div class="hubweek"><small>Week</small><strong>${next ? curWeek : 12}</strong><small>of 12</small></div>
+      <div class="hubstats">
+        <div class="hubstat"><strong>${doneCount}</strong><small>workouts</small></div>
+        <div class="hubstat"><strong>${thisWeek}</strong><small>this week</small></div>
+        <div class="hubstat"><strong>${stk}</strong><small>wk streak</small></div>
+      </div>`;
+
     if (next) {
       $("#upNext").hidden = false;
       $("#upNext").textContent =
@@ -225,12 +259,12 @@
       ? `${log.length} session${log.length === 1 ? "" : "s"} logged`
       : "Session one is waiting.";
 
-    // state-aware card + CTAs
+    // state-aware card + CTA
     const eyebrow = $("#todayEyebrow"), title = $("#todayTitle"), meta = $("#todayMeta");
-    const btn = $("#todayBtn"), bar = $("#barCta");
+    const btn = $("#todayBtn");
     const setCta = (label, href) => {
-      btn.textContent = label; btn.setAttribute("href", href);
-      bar.textContent = label; bar.setAttribute("href", href);
+      btn.textContent = label;
+      btn.setAttribute("href", href);
     };
 
     if (currentSession) {
@@ -882,7 +916,8 @@
     renderJournal();
     renderProgress();
     updateFocusHint();
-    $("#journal").scrollIntoView({ behavior: "smooth" });
+    showTab("journal");
+    window.scrollTo({ top: 0, behavior: "smooth" });
   });
 
   // Discard an in-progress session: nothing is logged, the plan doesn't advance.
@@ -1594,6 +1629,50 @@
     if (document.visibilityState === "visible" && !$("#session").hidden) requestWake();
   });
 
+  /* ================= tab navigation ================= */
+
+  const TABS = ["today", "train", "plan", "journal"];
+  const ANCHOR_TAB = {
+    top: "today", protocol: "today",
+    arsenal: "train", session: "train",
+    plan: "plan", journal: "journal",
+  };
+
+  function showTab(tab) {
+    if (!TABS.includes(tab)) tab = "today";
+    document.querySelectorAll("[data-apptab]").forEach((sec) => {
+      sec.classList.toggle("tab-hidden", sec.dataset.apptab !== tab);
+    });
+    document.querySelectorAll(".tabbar__tab").forEach((b) => {
+      b.classList.toggle("is-active", b.dataset.tab === tab);
+    });
+    // tab content skips the scroll-reveal wait — it must paint on switch
+    document.querySelectorAll(`[data-apptab="${tab}"] .reveal:not(.is-in)`)
+      .forEach((el) => el.classList.add("is-in"));
+    store.set(KEY_TAB, tab);
+  }
+
+  document.querySelectorAll(".tabbar__tab").forEach((b) => {
+    b.addEventListener("click", () => {
+      showTab(b.dataset.tab);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  });
+
+  // route every in-page anchor through the tabs, then scroll to the target
+  document.addEventListener("click", (ev) => {
+    const a = ev.target.closest('a[href^="#"]');
+    if (!a) return;
+    const id = a.getAttribute("href").slice(1);
+    const tab = ANCHOR_TAB[id];
+    if (!tab) return;
+    ev.preventDefault();
+    showTab(tab);
+    const el = document.getElementById(id);
+    if (el && id !== "top") setTimeout(() => el.scrollIntoView({ behavior: "smooth" }), 40);
+    else window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
   /* ================= scroll reveals ================= */
 
   const io = new IntersectionObserver((entries) => {
@@ -1631,4 +1710,5 @@
   renderMeasurements();
   renderPhotos();
   if (currentSession) renderSession(); // restore an in-progress session after refresh
+  showTab(store.get(KEY_TAB, "today"));
 })();
