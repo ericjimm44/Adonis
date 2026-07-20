@@ -521,6 +521,71 @@ body { padding-bottom: 5.4rem; }
 
 .build-cta { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; }
 
+/* ============ daily strikes library ============ */
+
+.library { max-width: 44rem; }
+
+.cats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 0.8rem;
+  margin-top: 1.2rem;
+}
+@media (max-width: 560px) { .cats { grid-template-columns: 1fr 1fr; gap: 0.7rem; } }
+
+.cat {
+  position: relative;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-md);
+  background:
+    radial-gradient(120% 140% at 85% -20%, rgba(201, 111, 74, 0.14), transparent 60%),
+    var(--ink-2);
+  padding: 1.6rem 1.1rem 1.1rem;
+  text-align: left;
+  cursor: pointer;
+  color: var(--sand);
+  transition: border-color 0.3s, transform 0.2s;
+}
+.cat:hover { border-color: rgba(217, 163, 94, 0.5); transform: translateY(-2px); }
+.cat:active { transform: scale(0.97); }
+.cat__name { display: block; font-family: var(--serif); font-size: 1.15rem; line-height: 1.15; }
+.cat__count { display: block; margin-top: 0.35rem; font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--sand-dim); }
+
+.routinelist { margin-top: 1.2rem; }
+.routinelist__title { font-family: var(--serif); font-weight: 400; font-size: 1.6rem; margin: 0.9rem 0 1rem; }
+.routinelist__title em { color: var(--gold); font-style: italic; }
+
+.routine {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-md);
+  background: var(--ink-2);
+  padding: 1rem 1.2rem;
+  margin-bottom: 0.7rem;
+  cursor: pointer;
+  color: var(--sand);
+  text-align: left;
+  transition: border-color 0.3s, transform 0.2s;
+}
+.routine:hover { border-color: rgba(217, 163, 94, 0.5); }
+.routine:active { transform: scale(0.985); }
+.routine__mins {
+  min-width: 3.2rem;
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  color: var(--gold);
+  text-align: center;
+  line-height: 1.1;
+}
+.routine__mins small { display: block; font-family: var(--sans); font-size: 0.5rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--sand-dim); }
+.routine__body { flex: 1; min-width: 0; }
+.routine__name { display: block; font-family: var(--serif); font-size: 1.1rem; }
+.routine__note { display: block; color: var(--sand-dim); font-size: 0.78rem; margin-top: 0.15rem; }
+.routine__go { color: var(--ember); font-size: 1.3rem; }
+
 /* ============ workout blocks ============ */
 
 .timerbar {

@@ -359,7 +359,7 @@
     if (currentSession) {
       const day = PROGRAM[currentSession.dayKey];
       eyebrow.textContent = "In progress";
-      title.textContent = day.title;
+      title.textContent = currentSession.routineName || day.title;
       meta.textContent = currentSession.phaseName
         ? `Week ${currentSession.week} · ${currentSession.phaseName}`
         : "Freestyle session";
@@ -650,6 +650,7 @@
         return {
           label: block.label,
           scheme: block.scheme,
+          src: bi,
           exercises: block.slots.map((pool, si) => {
             const avail = availablePool(pool);
             let chosen = avail[0];
@@ -668,14 +669,105 @@
 
   const saveActive = () => store.set(KEY_ACTIVE, currentSession);
 
+  /* ================= daily strikes library ================= */
+
+  function renderCats() {
+    $("#catGrid").innerHTML = ROUTINE_CATS.map((c) => {
+      const n = ROUTINES.filter((r) => r.cat === c.id).length;
+      return `<button type="button" class="cat" data-cat="${c.id}">
+        <span class="cat__name">${esc(c.name)}</span>
+        <span class="cat__count">${n} routine${n === 1 ? "" : "s"}</span>
+      </button>`;
+    }).join("");
+  }
+
+  function openCat(catId) {
+    const cat = ROUTINE_CATS.find((c) => c.id === catId);
+    if (!cat) return;
+    $("#catGrid").hidden = true;
+    $("#routineList").hidden = false;
+    const parts = cat.name.split(" ");
+    $("#catTitle").innerHTML = parts.length > 1
+      ? `${esc(parts.slice(0, -1).join(" "))} <em>${esc(parts[parts.length - 1])}</em>`
+      : `<em>${esc(cat.name)}</em>`;
+    $("#routineRows").innerHTML = ROUTINES.filter((r) => r.cat === catId).map((r) => `
+      <button type="button" class="routine" data-routine="${r.id}">
+        <span class="routine__mins">${r.mins}<small>min</small></span>
+        <span class="routine__body">
+          <span class="routine__name">${esc(r.name)}</span>
+          <span class="routine__note">${esc(r.note)}</span>
+        </span>
+        <span class="routine__go">›</span>
+      </button>`).join("");
+  }
+
+  $("#catGrid").addEventListener("click", (ev) => {
+    const c = ev.target.closest("[data-cat]");
+    if (c) openCat(c.dataset.cat);
+  });
+  $("#catBack").addEventListener("click", () => {
+    $("#routineList").hidden = true;
+    $("#catGrid").hidden = false;
+  });
+  $("#routineRows").addEventListener("click", (ev) => {
+    const b = ev.target.closest("[data-routine]");
+    if (!b) return;
+    const r = ROUTINES.find((x) => x.id === b.dataset.routine);
+    if (r) buildRoutine(r);
+  });
+
+  // An off-plan session from a routine recipe: same engine, same features,
+  // but the 12-week campaign is untouched when it's completed.
+  function buildRoutine(r, reroll = false) {
+    const day = PROGRAM[r.dayKey];
+    const prev = reroll && currentSession && currentSession.routineId === r.id ? currentSession : null;
+    currentSession = {
+      dayKey: r.dayKey,
+      freestyle: true,
+      routineId: r.id,
+      routineName: r.name,
+      routineNote: `${r.note} (~${r.mins} min · off-plan — your campaign doesn't move.)`,
+      week: null, phaseName: null, phaseReps: null, phaseRpe: null, timeNote: null,
+      blocks: r.blocks.map((srcBi, outBi) => {
+        const block = day.blocks[srcBi];
+        const rounds = Math.max(2, roundsFromScheme(block.scheme));
+        const target = repRange(block.scheme, true);
+        return {
+          label: block.label,
+          scheme: block.scheme,
+          src: srcBi,
+          exercises: block.slots.map((pool, si) => {
+            const avail = availablePool(pool);
+            let chosen = avail[0];
+            if (prev && prev.blocks[outBi] && prev.blocks[outBi].exercises[si] && avail.length > 1) {
+              const others = avail.filter((e) => e.name !== prev.blocks[outBi].exercises[si].name);
+              chosen = others[Math.floor(Math.random() * others.length)] || avail[0];
+            }
+            return makeExercise(chosen, rounds, null, target);
+          }),
+        };
+      }),
+    };
+    saveActive();
+    renderSession();
+    // reset the library to its grid for the next visit
+    $("#routineList").hidden = true;
+    $("#catGrid").hidden = false;
+    showTab("train");
+    setTimeout(() => $("#session").scrollIntoView({ behavior: "smooth" }), 40);
+  }
+
   /* ================= session rendering ================= */
 
   function renderSession() {
     if (!currentSession) return;
     const day = PROGRAM[currentSession.dayKey];
 
-    $("#sessionTitle").innerHTML = esc(day.title).replace(/ (\S+)$/, " <em>$1</em>");
-    $("#sessionSub").textContent = day.sub + (currentSession.timeNote ? " " + currentSession.timeNote : "");
+    const titleText = currentSession.routineName || day.title;
+    $("#sessionTitle").innerHTML = esc(titleText).replace(/ (\S+)$/, " <em>$1</em>");
+    $("#sessionSub").textContent = currentSession.routineNote
+      ? currentSession.routineNote
+      : day.sub + (currentSession.timeNote ? " " + currentSession.timeNote : "");
     $("#sessionScience").textContent = day.science || "";
 
     const chip = $("#phaseChip");
@@ -899,7 +991,8 @@
 
   function swapExercise(bi, si) {
     const day = PROGRAM[currentSession.dayKey];
-    const pool = day.blocks[bi].slots[si];
+    const srcBi = currentSession.blocks[bi].src ?? bi;
+    const pool = day.blocks[srcBi].slots[si];
     const avail = availablePool(pool);
     if (avail.length < 2) return;
     const cur = currentSession.blocks[bi].exercises[si];
@@ -917,7 +1010,13 @@
     buildSession(false);
     $("#session").scrollIntoView({ behavior: "smooth" });
   });
-  $("#rerollBtn").addEventListener("click", () => buildSession(true));
+  $("#rerollBtn").addEventListener("click", () => {
+    if (currentSession && currentSession.freestyle && currentSession.routineId) {
+      const r = ROUTINES.find((x) => x.id === currentSession.routineId);
+      if (r) { buildRoutine(r, true); return; }
+    }
+    buildSession(true);
+  });
 
   /* ================= rest timer ================= */
 
@@ -1095,10 +1194,10 @@
     }));
     store.set(KEY_HIST, hist);
 
-    // advance the plan
+    // advance the plan (never for off-plan routine sessions)
     const plan = getPlan();
     let weekInfo = "";
-    if (plan) {
+    if (plan && !currentSession.freestyle) {
       const next = nextPlanSession(plan);
       if (next) {
         next.done = true;
@@ -1113,7 +1212,7 @@
     log.push({
       date: stamp,
       dayKey: currentSession.dayKey,
-      title: PROGRAM[currentSession.dayKey].title,
+      title: currentSession.routineName || PROGRAM[currentSession.dayKey].title,
       week: weekInfo,
       done, total,
     });
@@ -1977,6 +2076,7 @@
   renderPhotos();
   renderNoteTypes();
   renderNotes();
+  renderCats();
   if (currentSession) renderSession(); // restore an in-progress session after refresh
   showTab(store.get(KEY_TAB, "today"));
 })();

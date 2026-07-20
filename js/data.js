@@ -545,6 +545,49 @@ const PHASES = [
   },
 ];
 
+/* ============================================================
+   Daily strikes — a library of named quick routines, grouped in
+   categories (Alive-style). Each routine is a recipe over the
+   existing program blocks (dayKey + block indices), so every
+   strike inherits equipment adaptivity, swaps, intensity
+   techniques, the player, and logging for free. Off-plan:
+   completing one never advances the 12-week campaign.
+   ============================================================ */
+const ROUTINE_CATS = [
+  { id: "chestback", name: "Chest & Back" },
+  { id: "shoulderarms", name: "Shoulders & Arms" },
+  { id: "legs", name: "Legs" },
+  { id: "core", name: "Abs & Core" },
+  { id: "conditioning", name: "Conditioning" },
+  { id: "fullbody", name: "Full Body" },
+];
+
+const ROUTINES = [
+  { id: "wardog", cat: "chestback", name: "War Dog", mins: 40, dayKey: "chestback", blocks: [0, 1], note: "The heavy pairs — press and pull until the armor fits." },
+  { id: "armorplate", cat: "chestback", name: "Armor Plate", mins: 20, dayKey: "chestback", blocks: [0], note: "One heavy pair, done properly. In and out." },
+  { id: "wingspan", cat: "chestback", name: "Wingspan", mins: 15, dayKey: "chestback", blocks: [2], note: "Flys and pullovers — chase the stretch, build the width." },
+
+  { id: "silhouette", cat: "shoulderarms", name: "The Silhouette", mins: 40, dayKey: "shoulderarms", blocks: [0, 1], note: "Delts and arms back to back. The ratio day, compressed." },
+  { id: "boulders", cat: "shoulderarms", name: "Boulder Shoulders", mins: 20, dayKey: "shoulderarms", blocks: [0], note: "Press + lateral pair. Width lives here." },
+  { id: "sleeves", cat: "shoulderarms", name: "Sleeve Filler", mins: 18, dayKey: "shoulderarms", blocks: [1], note: "Biceps and triceps giant pair. Pump guaranteed." },
+  { id: "rearguard", cat: "shoulderarms", name: "Rear Guard", mins: 12, dayKey: "shoulderarms", blocks: [2], note: "Rear delts and traps — the posture polish." },
+
+  { id: "ironbase", cat: "legs", name: "Iron Base", mins: 22, dayKey: "legs", blocks: [0], note: "Squat and hinge. The non-negotiables." },
+  { id: "foundationx", cat: "legs", name: "Foundation Express", mins: 40, dayKey: "legs", blocks: [0, 1], note: "Squat, hinge, then single-leg honesty." },
+  { id: "springload", cat: "legs", name: "Spring Loaded", mins: 12, dayKey: "legs", blocks: [2], note: "Calves and jumps — the athletic finish." },
+
+  { id: "carved", cat: "core", name: "Carved in Stone", mins: 16, dayKey: "engine", blocks: [1], note: "The full core circuit. Abs are earned in rounds." },
+  { id: "corekill", cat: "core", name: "Core & Kill", mins: 25, dayKey: "engine", blocks: [1, 2], note: "Core circuit, then empty the tank." },
+
+  { id: "wakandan", cat: "conditioning", name: "Wakandan Rounds", mins: 25, dayKey: "engine", blocks: [0], note: "Five fight rounds. Move like the crown depends on it." },
+  { id: "fightcamp", cat: "conditioning", name: "Fight Camp", mins: 32, dayKey: "engine", blocks: [0, 2], note: "Rounds plus finisher. The shred session." },
+  { id: "finisher", cat: "conditioning", name: "The Finisher", mins: 8, dayKey: "engine", blocks: [2], note: "One round, everything you have left." },
+
+  { id: "sculptx", cat: "fullbody", name: "Total Sculpt Express", mins: 35, dayKey: "fullbody", blocks: [0, 1], note: "Squat, press, pull, delts — the essentials." },
+  { id: "traveler", cat: "fullbody", name: "The Traveler", mins: 20, dayKey: "fullbody", blocks: [0], note: "One compound pair. Works in any hotel room." },
+  { id: "thehour", cat: "fullbody", name: "The Hour", mins: 55, dayKey: "fullbody", blocks: [0, 1, 2], note: "Everything, once. A complete body in one sitting." },
+];
+
 const TIME_OPTIONS = [
   { mins: 30, label: "30 min", blocks: 2, roundAdj: -1, note: "First two pairs only, one fewer round — density over volume." },
   { mins: 45, label: "45 min", blocks: 3, roundAdj: -1, note: "All pairs, trimmed rounds. Keep the rests honest." },
